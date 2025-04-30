@@ -3,9 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>せかいぬりえ</title>
-    <!-- 外部 CSS -->
+    <title>せかいぬりえ – 画像ギャラリー</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -17,112 +15,82 @@
     <main>
       <div id="gallery" class="gallery"></div>
       <div id="pagination" class="pagination"></div>
+
+      <div class="convert-wrap">
+        <button id="convertBtn" class="convert-btn" disabled>
+          選択した画像を塗り絵にする
+        </button>
+      </div>
     </main>
 
-    <div id="modal" class="modal" aria-hidden="true">
-      <img id="modalImg" src="" alt="拡大画像" />
+    <!-- 永続ローディング -->
+    <div id="loading" class="loading">
+      <p>塗り絵に変換中<span>…</span></p>
+      <button id="cancelBtn" class="cancel-btn">キャンセル</button>
     </div>
 
+    <!-- 保存データ削除ボタン -->
+<div class="settings">
+  <button id="clearBtn" class="clear-btn">
+    保存データを消去
+  </button>
+</div>
+
     <script>
+      /* === DOM === */
       const uploadInput = document.getElementById("uploadInput");
-      const galleryEl = document.getElementById("gallery");
-      const paginationEl = document.getElementById("pagination");
-      const modal = document.getElementById("modal");
-      const modalImg = document.getElementById("modalImg");
+      const galleryEl   = document.getElementById("gallery");
+      const paginationEl= document.getElementById("pagination");
+      const convertBtn  = document.getElementById("convertBtn");
+      const loadingEl   = document.getElementById("loading");
+      const cancelBtn   = document.getElementById("cancelBtn");
 
-      let images = []; // { url: objectURL, name: fileName }
-      let currentPage = 1;
-      const perPage = 9;
+      /* === 状態 === */
+      let images=[]; let currentPage=1; const perPage=9; const KEY="sekai-enogu-images-v1";
 
-      // ---------- 画像アップロード ----------
-      uploadInput.addEventListener("change", (e) => {
-        const files = Array.from(e.target.files || []);
-        files.forEach((file) => {
-          const url = URL.createObjectURL(file);
-          images.push({ url, name: file.name });
-        });
-        currentPage = 1; // reset to first page
-        renderGallery();
-        renderPagination();
-        uploadInput.value = "";
-      });
+      /* === 初期表示 === */
+      loadImages(); renderGallery(); renderPagination(); updateConvertBtn();
 
-      // ---------- ギャラリー表示 ----------
-      function renderGallery() {
-        galleryEl.innerHTML = "";
-        const start = (currentPage - 1) * perPage;
-        const slice = images.slice(start, start + perPage);
-        slice.forEach(({ url, name }) => {
-          const img = document.createElement("img");
-          img.src = url;
-          img.alt = name;
-          img.loading = "lazy";
-          img.addEventListener("click", () => openModal(url, name));
-          galleryEl.appendChild(img);
-        });
-      }
+      /* ========== アップロード & 圧縮 ========= */
+      uploadInput.onchange=e=>{
+        const files=[...(e.target.files||[])]; if(!files.length) return;
+        Promise.all(files.map(f=>resizeToBase64(f,600,0.7).then(data=>({data,name:f.name,selected:false}))))
+        .then(list=>{images=images.concat(list);saveImages();currentPage=1;renderGallery();renderPagination();updateConvertBtn();uploadInput.value="";});
+      };
+      function resizeToBase64(file,max,quality){return new Promise(r=>{const img=new Image();img.onload=()=>{const s=Math.min(max/img.width,max/img.height,1);const w=img.width*s,h=img.height*s;const cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);r(cv.toDataURL("image/jpeg",quality));};img.src=URL.createObjectURL(file);});}
 
-      // ---------- ページネーション ----------
-      function renderPagination() {
-        paginationEl.innerHTML = "";
-        const totalPages = Math.ceil(images.length / perPage) || 1;
+      /* ========== localStorage ========= */
+      function saveImages(){try{localStorage.setItem(KEY,JSON.stringify(images));}catch(e){alert("保存容量がいっぱいです。いくつか画像を削除してください。")}}
+      function loadImages(){const j=localStorage.getItem(KEY);if(j) images=JSON.parse(j);}  
 
-        const prevBtn = document.createElement("button");
-        prevBtn.textContent = "<";
-        prevBtn.disabled = currentPage === 1;
-        prevBtn.addEventListener("click", () => {
-          if (currentPage > 1) {
-            currentPage--;
-            renderGallery();
-            renderPagination();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }
-        });
-        paginationEl.appendChild(prevBtn);
+      /* ========== ギャラリー ========= */
+      function renderGallery(){galleryEl.innerHTML="";const start=(currentPage-1)*perPage;
+        images.slice(start,start+perPage).forEach((img,i)=>{const w=document.createElement("div");w.className="thumb"+(img.selected?" selected":"");w.onclick=()=>toggleSelect(start+i);w.innerHTML=`<img src="${img.data}" alt="${img.name}" loading="lazy"><span class="check">✓</span>`;galleryEl.appendChild(w);});}
+      function toggleSelect(idx){images[idx].selected=!images[idx].selected;saveImages();renderGallery();updateConvertBtn();}
 
-        for (let i = 1; i <= totalPages; i++) {
-          const btn = document.createElement("button");
-          btn.textContent = i;
-          if (i === currentPage) btn.classList.add("active");
-          btn.addEventListener("click", () => {
-            currentPage = i;
-            renderGallery();
-            renderPagination();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          });
-          paginationEl.appendChild(btn);
-        }
+      /* ========== ページネーション ========= */
+      function renderPagination(){paginationEl.innerHTML="";const tot=Math.max(1,Math.ceil(images.length/perPage));const mk=(t,d,cb)=>{const b=document.createElement("button");b.textContent=t;b.disabled=d;b.onclick=cb;return b};
+        paginationEl.appendChild(mk("<",currentPage===1,()=>{currentPage--;updatePage();}));
+        for(let i=1;i<=tot;i++){const b=mk(i,false,()=>{currentPage=i;updatePage();});if(i===currentPage) b.classList.add("active");paginationEl.appendChild(b);} paginationEl.appendChild(mk(">",currentPage===tot,()=>{currentPage++;updatePage();}));}
+      function updatePage(){renderGallery();renderPagination();window.scrollTo({top:0,behavior:"smooth"});}
 
-        const nextBtn = document.createElement("button");
-        nextBtn.textContent = ">";
-        nextBtn.disabled = currentPage === totalPages;
-        nextBtn.addEventListener("click", () => {
-          if (currentPage < totalPages) {
-            currentPage++;
-            renderGallery();
-            renderPagination();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }
-        });
-        paginationEl.appendChild(nextBtn);
-      }
+      /* ========== 変換ボタン ========= */
+      function updateConvertBtn(){convertBtn.disabled=!images.some(i=>i.selected);} 
+      convertBtn.onclick=()=>{if(convertBtn.disabled) return; showLoading(); /* 本来はここでAPI呼び出し等を開始 */};
 
-      // ---------- モーダル ----------
-      function openModal(src, alt) {
-        modalImg.src = src;
-        modalImg.alt = alt;
-        modal.classList.add("open");
-        modal.setAttribute("aria-hidden", "false");
-      }
-      modal.addEventListener("click", () => closeModal());
-      function closeModal() {
-        modal.classList.remove("open");
-        modal.setAttribute("aria-hidden", "true");
-        modalImg.src = "";
-      }
+      /* ========== ローディング制御 ========= */
+      function showLoading(){loadingEl.classList.add("show");convertBtn.disabled=true;}
+      function hideLoading(){loadingEl.classList.remove("show");updateConvertBtn();}
+      cancelBtn.onclick=hideLoading; // 任意タイミングで外側から hideLoading() 呼び出し可
 
-      renderGallery();
-      renderPagination();
+      /* === データ消去ボタン === */
+document.getElementById("clearBtn").onclick = () => {
+  if (confirm("アップロード済みの画像をすべて削除しますか？")) {
+    localStorage.removeItem("sekai-enogu-images-v1");
+    location.reload();          // ページを再読み込み
+  }
+};
+
     </script>
   </body>
 </html>
