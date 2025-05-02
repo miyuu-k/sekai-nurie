@@ -1,103 +1,137 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>せかいぬりえ  画像ギャラリー</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header>
-      <label for="uploadInput" class="upload-btn">画像をアップロード</label>
-      <input type="file" id="uploadInput" accept="image/*" multiple />
-    </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>せかいぬりえ – 画像ギャラリー</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ── HEADER ────────────────────────────── -->
+  <header>
+    <label for="uploadInput" class="upload-btn">しゃしんをあっぷする</label>
+    <input type="file" id="uploadInput" accept="image/*" multiple />
+  </header>
 
-    <main>
-      <div id="gallery" class="gallery"></div>
-      <div id="pagination" class="pagination"></div>
+  <!-- ── MAIN ─────────────────────────────── -->
+  <main>
+    <div id="gallery" class="gallery"></div>
+    <div id="pagination" class="pagination"></div>
+  </main>
 
-      <div class="convert-wrap">
-        <button id="convertBtn" class="convert-btn" disabled>
-          えらんだしゃしんをぬりえにする
-        </button>
-        <!-- New! -->
-  <button id="makeBtn" class="make-btn">
-    ぬりえを作る
-  </button>
-</div>
-      </div>
+  <!-- ── ACTION BUTTONS (固定) ─────────────── -->
+  <div class="convert-wrap">
+    <button id="convertBtn" class="convert-btn" disabled>
+      えらんだしゃしんをぬりえにする
+    </button>
+    <button id="makeBtn" class="make-btn">
+      ぬりえをつくる
+    </button>
+    <button id="clearBtn" class="clear-btn">
+      保存データを消去
+    </button>
+  </div>
 
-    </main>
-        <!-- 保存データ削除ボタン -->
-<div class="settings">
-  <button id="clearBtn" class="clear-btn">
-    保存データを消去
-  </button>
-</div>
+  <!-- ── LOADING OVERLAY ──────────────────── -->
+  <div id="loading" class="loading">
+    <p>ぬりえさくせいちゅう<span>…</span></p>
+    <button id="cancelBtn" class="cancel-btn">キャンセル</button>
+  </div>
 
+  <!-- ── SCRIPT ───────────────────────────── -->
+  <script>
+  /* ===== DOM ===== */
+  const uploadInput = document.getElementById("uploadInput");
+  const galleryEl   = document.getElementById("gallery");
+  const paginationEl= document.getElementById("pagination");
+  const convertBtn  = document.getElementById("convertBtn");
+  const makeBtn     = document.getElementById("makeBtn");
+  const clearBtn    = document.getElementById("clearBtn");
+  const loadingEl   = document.getElementById("loading");
+  const cancelBtn   = document.getElementById("cancelBtn");
 
-    <!-- 永続ローディング -->
-    <div id="loading" class="loading">
-      <p>ぬりえさくせいちゅう<span>…</span></p>
-      <button id="cancelBtn" class="cancel-btn">キャンセル</button>
-    </div>
+  /* ===== STATE ===== */
+  let images=[]; let currentPage=1;
+  const perPage=9, KEY="sekai-enogu-images-v1";
 
+  /* === INIT === */
+  loadImages(); renderAll();
 
-    <script>
-      /* === DOM === */
-      const uploadInput = document.getElementById("uploadInput");
-      const galleryEl   = document.getElementById("gallery");
-      const paginationEl= document.getElementById("pagination");
-      const convertBtn  = document.getElementById("convertBtn");
-      const loadingEl   = document.getElementById("loading");
-      const cancelBtn   = document.getElementById("cancelBtn");
-
-      /* === 状態 === */
-      let images=[]; let currentPage=1; const perPage=9; const KEY="sekai-enogu-images-v1";
-
-      /* === 初期表示 === */
-      loadImages(); renderGallery(); renderPagination(); updateConvertBtn();
-
-      /* ========== アップロード & 圧縮 ========= */
-      uploadInput.onchange=e=>{
-        const files=[...(e.target.files||[])]; if(!files.length) return;
-        Promise.all(files.map(f=>resizeToBase64(f,600,0.7).then(data=>({data,name:f.name,selected:false}))))
-        .then(list=>{images=images.concat(list);saveImages();currentPage=1;renderGallery();renderPagination();updateConvertBtn();uploadInput.value="";});
+  /* === Upload & resize === */
+  uploadInput.onchange=e=>{
+    const files=[...(e.target.files||[])];
+    if(!files.length) return;
+    Promise.all(files.map(f=>resizeToBase64(f,600,0.7)
+      .then(data=>({data,name:f.name,selected:false}))))
+      .then(list=>{
+        images=images.concat(list); saveImages();
+        currentPage=1; renderAll(); uploadInput.value="";
+      });
+  };
+  function resizeToBase64(file,max,quality){
+    return new Promise(r=>{
+      const img=new Image();
+      img.onload=()=>{
+        const s=Math.min(max/img.width,max/img.height,1);
+        const w=img.width*s, h=img.height*s;
+        const cv=document.createElement("canvas");
+        cv.width=w; cv.height=h;
+        cv.getContext("2d").drawImage(img,0,0,w,h);
+        r(cv.toDataURL("image/jpeg",quality));
       };
-      function resizeToBase64(file,max,quality){return new Promise(r=>{const img=new Image();img.onload=()=>{const s=Math.min(max/img.width,max/img.height,1);const w=img.width*s,h=img.height*s;const cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);r(cv.toDataURL("image/jpeg",quality));};img.src=URL.createObjectURL(file);});}
-
-      /* ========== localStorage ========= */
-      function saveImages(){try{localStorage.setItem(KEY,JSON.stringify(images));}catch(e){alert("保存容量がいっぱいです。いくつか画像を削除してください。")}}
-      function loadImages(){const j=localStorage.getItem(KEY);if(j) images=JSON.parse(j);}  
-
-      /* ========== ギャラリー ========= */
-      function renderGallery(){galleryEl.innerHTML="";const start=(currentPage-1)*perPage;
-        images.slice(start,start+perPage).forEach((img,i)=>{const w=document.createElement("div");w.className="thumb"+(img.selected?" selected":"");w.onclick=()=>toggleSelect(start+i);w.innerHTML=`<img src="${img.data}" alt="${img.name}" loading="lazy"><span class="check">✓</span>`;galleryEl.appendChild(w);});}
-      function toggleSelect(idx){images[idx].selected=!images[idx].selected;saveImages();renderGallery();updateConvertBtn();}
-
-      /* ========== ページネーション ========= */
-      function renderPagination(){paginationEl.innerHTML="";const tot=Math.max(1,Math.ceil(images.length/perPage));const mk=(t,d,cb)=>{const b=document.createElement("button");b.textContent=t;b.disabled=d;b.onclick=cb;return b};
-        paginationEl.appendChild(mk("<",currentPage===1,()=>{currentPage--;updatePage();}));
-        for(let i=1;i<=tot;i++){const b=mk(i,false,()=>{currentPage=i;updatePage();});if(i===currentPage) b.classList.add("active");paginationEl.appendChild(b);} paginationEl.appendChild(mk(">",currentPage===tot,()=>{currentPage++;updatePage();}));}
-      function updatePage(){renderGallery();renderPagination();window.scrollTo({top:0,behavior:"smooth"});}
-
-      /* ========== 変換ボタン ========= */
-      function updateConvertBtn(){convertBtn.disabled=!images.some(i=>i.selected);} 
-      convertBtn.onclick=()=>{if(convertBtn.disabled) return; showLoading(); /* 本来はここでAPI呼び出し等を開始 */};
-
-      /* ========== ローディング制御 ========= */
-      function showLoading(){loadingEl.classList.add("show");convertBtn.disabled=true;}
-      function hideLoading(){loadingEl.classList.remove("show");updateConvertBtn();}
-      cancelBtn.onclick=hideLoading; // 任意タイミングで外側から hideLoading() 呼び出し可
-
-      /* === データ消去ボタン === */
-document.getElementById("clearBtn").onclick = () => {
-  if (confirm("アップロード済みの画像をすべて削除しますか？")) {
-    localStorage.removeItem("sekai-enogu-images-v1");
-    location.reload();          // ページを再読み込み
+      img.src=URL.createObjectURL(file);
+    });
   }
-};
 
-    </script>
-  </body>
+  /* === localStorage === */
+  function saveImages(){try{localStorage.setItem(KEY,JSON.stringify(images));}
+    catch{alert("保存容量がいっぱいです。いくつか画像を削除してください。")}}
+  function loadImages(){const j=localStorage.getItem(KEY);if(j) images=JSON.parse(j);}
+
+  /* === Gallery === */
+  function renderGallery(){
+    galleryEl.innerHTML="";
+    const start=(currentPage-1)*perPage;
+    images.slice(start,start+perPage).forEach((img,i)=>{
+      const w=document.createElement("div");
+      w.className="thumb"+(img.selected?" selected":"");
+      w.onclick=()=>toggle(start+i);
+      w.innerHTML=`<img src="${img.data}" alt="${img.name}" loading="lazy">
+                   <span class="check">✓</span>`;
+      galleryEl.appendChild(w);
+    });
+  }
+  function toggle(idx){images[idx].selected=!images[idx].selected;saveImages();renderGallery();updateButtons();}
+
+  /* === Pagination === */
+  function renderPagination(){
+    paginationEl.innerHTML="";
+    const tot=Math.max(1,Math.ceil(images.length/perPage));
+    const mk=(t,d,cb)=>{const b=document.createElement("button");b.textContent=t;b.disabled=d;b.onclick=cb;return b};
+    paginationEl.append(mk("<",currentPage===1,()=>{currentPage--;renderAll()}));
+    for(let i=1;i<=tot;i++){
+      const b=mk(i,false,()=>{currentPage=i;renderAll()});
+      if(i===currentPage) b.classList.add("active");
+      paginationEl.append(b);
+    }
+    paginationEl.append(mk(">",currentPage===tot,()=>{currentPage++;renderAll()}));
+  }
+
+  /* === Buttons === */
+  function updateButtons(){
+    convertBtn.disabled=!images.some(i=>i.selected);
+  }
+  convertBtn.onclick=()=>{ if(convertBtn.disabled) return; showLoading(); /* ここに変換処理 */ };
+  makeBtn.onclick   =()=>alert("ぬりえを作るボタンが押されました！");
+  clearBtn.onclick  =()=>{ if(confirm("保存データを削除しますか？")){localStorage.removeItem(KEY);images=[];renderAll();} };
+
+  /* === Loading === */
+  function showLoading(){ loadingEl.classList.add("show"); convertBtn.disabled=true; }
+  function hideLoading(){ loadingEl.classList.remove("show"); updateButtons(); }
+  cancelBtn.onclick=hideLoading;
+
+  /* === Helpers === */
+  function renderAll(){ renderGallery(); renderPagination(); updateButtons(); }
+  </script>
+</body>
 </html>
