@@ -120,11 +120,11 @@
    .pagination .active { background: var(--primary); color: #fff; }
    
    /***** 変換ボタン (画面下固定) *****/
-   .convert-wrap {
-     position: fixed; bottom: 20px; left: 0; right: 0;
-     display: flex; justify-content: center; pointer-events: none;
-     z-index: 101;
-   }
+   .convert-wrap{
+    position:fixed; bottom:20px; left:0; right:0;
+    display:flex; justify-content:center; gap:1rem;
+    pointer-events:none;              /* 親は無効化 */
+  }
    .convert-btn {
      pointer-events: auto;
      padding: 1rem 2.5rem;
@@ -137,6 +137,23 @@
    }
    .convert-btn:disabled { opacity: .4; cursor: not-allowed; }
    .convert-btn:not(:disabled):hover { transform: translateY(-2px); }
+
+   .make-btn{
+    pointer-events:auto;              /* クリック可 */
+    padding:1rem 2rem;
+    border:none; border-radius:40px;
+    background:#fff;              /* ホワイト */
+    color:var(--primary);          /* ピンク文字 */
+    font-weight:600;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    transition:transform .15s, background .2s;
+  }
+  .make-btn:hover{
+    background:var(--secondary);   /* ホバー時イエロー */
+    color:#fff;
+    transform:translateY(-2px);
+  }
    
    /***** 保存データ削除ボタン (右下固定) *****/
    .settings { position: fixed; bottom: 90px; right: 20px; z-index: 102; }
