@@ -132,7 +132,7 @@
       const fd = new FormData();
       fd.append("file", dataURLtoBlob(targets[0].data), "upload.jpg");
 
-      const r = await fetch("/api/lineart", {
+      const r = await fetch("/.netlify/functions/lineart", {
         method: "POST",
         body: fd
       });
