@@ -86,7 +86,7 @@
   /* === localStorage === */
   function saveImages(){try{localStorage.setItem(KEY,JSON.stringify(images));}
     catch{alert("保存容量がいっぱいです。いくつか画像を削除してください。")}}
-  function loadImages(){const j=localStorage.getItem(KEY);if(j) images=JSON.parse(j);}
+  function loadImages(){const j=localStorage.getItem(KEY);if(j) images=JSON.parse(j);}  
 
   /* === Gallery === */
   function renderGallery(){
@@ -96,8 +96,7 @@
       const w=document.createElement("div");
       w.className="thumb"+(img.selected?" selected":"");
       w.onclick=()=>toggle(start+i);
-      w.innerHTML=`<img src="${img.data}" alt="${img.name}" loading="lazy">
-                   <span class="check">✓</span>`;
+      w.innerHTML=`<img src="${img.data}" alt="${img.name}" loading="lazy">\n                   <span class="check">✓</span>`;
       galleryEl.appendChild(w);
     });
   }
@@ -121,7 +120,34 @@
   function updateButtons(){
     convertBtn.disabled=!images.some(i=>i.selected);
   }
-  convertBtn.onclick=()=>{ if(convertBtn.disabled) return; showLoading(); /* ここに変換処理 */ };
+
+  // ---------- ★ ぬりえ化処理を追加 ----------
+  convertBtn.onclick = async () => {
+    if (convertBtn.disabled) return;
+    const targets = images.filter(i => i.selected);
+    if (!targets.length) return;
+
+    showLoading();
+    try {
+      const fd = new FormData();
+      fd.append("file", dataURLtoBlob(targets[0].data), "upload.jpg");
+
+      const r = await fetch("/api/lineart", {
+        method: "POST",
+        body: fd
+      });
+      if (!r.ok) throw new Error("API Error");
+      const { url } = await r.json();
+
+      window.open(url, "_blank"); // 別タブで線画表示
+    } catch (e) {
+      console.error(e);
+      alert("ぬりえ化に失敗しました💦");
+    } finally {
+      hideLoading();
+    }
+  };
+
   makeBtn.onclick   =()=>alert("ぬりえを作るボタンが押されました！");
   clearBtn.onclick  =()=>{ if(confirm("保存データを削除しますか？")){localStorage.removeItem(KEY);images=[];renderAll();} };
 
@@ -132,6 +158,16 @@
 
   /* === Helpers === */
   function renderAll(){ renderGallery(); renderPagination(); updateButtons(); }
+
+  // DataURL → Blob 変換
+  function dataURLtoBlob(dataURL){
+    const [meta,base64]=dataURL.split(",");
+    const mime=meta.match(/:(.*?);/)[1];
+    const bin=atob(base64); const len=bin.length;
+    const u8=new Uint8Array(len);
+    for(let i=0;i<len;i++) u8[i]=bin.charCodeAt(i);
+    return new Blob([u8],{type:mime});
+  }
   </script>
 </body>
 </html>
