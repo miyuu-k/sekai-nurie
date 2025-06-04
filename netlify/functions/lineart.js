@@ -1,32 +1,35 @@
-// api/lineart.js
+// netlify/functions/lineart.js
 import OpenAI from "openai";
-import formidable from "formidable";
-import fs from "fs/promises";
+import parseMultipart from "parse-multipart";   // ★小さくて軽量なパーサ
 
-export const config = { api: { bodyParser: false } };  // Next.js / Vercel 用
+export const handler = async (event) => {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
+  }
 
-export default async (req, res) => {
-  // 1) アップロード画像を受け取る
-  const form = formidable();
-  const [_, files] = await form.parse(req);
-  const filePath = files.file[0].filepath;
+  // 1. 画像ファイルを取り出す（multipart/form-data）
+  const contentType = event.headers["content-type"] || event.headers["Content-Type"];
+  const boundary = parseMultipart.getBoundary(contentType);
+  const parts = parseMultipart.parse(Buffer.from(event.body, "base64"), boundary);
+  if (!parts.length) return { statusCode: 400, body: "No file" };
 
-  // 2) OpenAI Images API を呼び出し
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY});
-
+  // 2. OpenAI を呼び出す
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const prompt =
     "cute colouring-book line art, kawaii, thick rounded outlines, for 6-year-olds, no shading, white background";
 
   const out = await openai.images.generate({
-    model: "gpt-image-1",          // DALL·E 3 相当
+    model: "gpt-image-1",
     prompt,
     n: 1,
     size: "1024x1024",
-    detail: "standard",
-    image: await fs.readFile(filePath)     // バッファで渡す
+    image: parts[0].data,           // バッファ
+    detail: "standard"
   });
 
-  // 3) 生成された URL を返す
-  res.status(200).json({ url: out.data[0].url });
+  return {
+    statusCode: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: out.data[0].url })
+  };
 };
