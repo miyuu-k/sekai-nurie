@@ -1,6 +1,6 @@
 // netlify/functions/lineart.js
 import OpenAI from "openai";
-import parseMultipart from "parse-multipart";   // ★小さくて軽量なパーサ
+import * as parseMultipart from "parse-multipart";
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
