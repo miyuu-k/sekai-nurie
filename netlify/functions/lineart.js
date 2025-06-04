@@ -1,6 +1,6 @@
 // netlify/functions/lineart.js
 import OpenAI from "openai";
-import * as parseMultipart from "parse-multipart";
+import { parse, getBoundary } from "parse-multipart";
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -9,8 +9,8 @@ export const handler = async (event) => {
 
   // 1. 画像ファイルを取り出す（multipart/form-data）
   const contentType = event.headers["content-type"] || event.headers["Content-Type"];
-  const boundary = parseMultipart.getBoundary(contentType);
-  const parts = parseMultipart.parse(Buffer.from(event.body, "base64"), boundary);
+  const boundary = getBoundary(contentType);
+ const parts    = parse(Buffer.from(event.body, "base64"), boundary);
   if (!parts.length) return { statusCode: 400, body: "No file" };
 
   // 2. OpenAI を呼び出す
