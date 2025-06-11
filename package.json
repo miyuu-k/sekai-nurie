@@ -1,9 +1,7 @@
 {
-  "name": "sekaienogu",
-  "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "openai": "latest",
-    "parse-multipart": "latest"
+    "openai": "^4.27.0",
+    "parse-multipart": "^1.0.4"
   }
 }

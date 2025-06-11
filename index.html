@@ -2,202 +2,80 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>せかいぬりえ – 画像ギャラリー</title>
+  <title>ぬりえ線画ジェネレーター</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- ── HEADER ────────────────────────────── -->
-  <header>
-    <label for="uploadInput" class="upload-btn">しゃしんをあっぷする</label>
-    <input type="file" id="uploadInput" accept="image/*" multiple />
-  </header>
+  <h1>ぬりえ線画ジェネレーター</h1>
 
-  <!-- ── MAIN ─────────────────────────────── -->
-  <main>
-    <div id="gallery" class="gallery"></div>
-    <div id="pagination" class="pagination"></div>
-  </main>
+  <input type="file" id="file" accept="image/*" />
+  <button id="btn" disabled>ぬりえを作る</button>
 
-  <!-- ── ACTION BUTTONS (固定) ─────────────── -->
-  <div class="convert-wrap">
-    <button id="convertBtn" class="convert-btn" disabled>
-      えらんだしゃしんをぬりえにする
-    </button>
-    <button id="makeBtn" class="make-btn">
-      ぬりえをつくる
-    </button>
-    <button id="clearBtn" class="clear-btn">
-      保存データを消去
-    </button>
-  </div>
+  <p id="msg"></p>
+  <img id="result" alt="線画が表示されます" />
 
-  <!-- ── LOADING OVERLAY ──────────────────── -->
-  <div id="loading" class="loading">
-    <p>ぬりえさくせいちゅう<span>…</span></p>
-    <button id="cancelBtn" class="cancel-btn">キャンセル</button>
-  </div>
-
-  <!-- ── SCRIPT ───────────────────────────── -->
   <script>
-  /* ===== DOM ===== */
-  const uploadInput = document.getElementById("uploadInput");
-  const galleryEl   = document.getElementById("gallery");
-  const paginationEl= document.getElementById("pagination");
-  const convertBtn  = document.getElementById("convertBtn");
-  const makeBtn     = document.getElementById("makeBtn");
-  const clearBtn    = document.getElementById("clearBtn");
-  const loadingEl   = document.getElementById("loading");
-  const cancelBtn   = document.getElementById("cancelBtn");
+    const fileInput = document.getElementById("file");
+    const btn       = document.getElementById("btn");
+    const msg       = document.getElementById("msg");
+    const resultImg = document.getElementById("result");
 
-  /* ===== STATE ===== */
-  let images=[]; let currentPage=1;
-  const perPage=9, KEY="sekai-enogu-images-v1";
+    let selected;   // File オブジェクト保持
 
-  /* === INIT === */
-  loadImages(); renderAll();
-
-  /* === Upload & resize === */
-  uploadInput.onchange=e=>{
-    const files=[...(e.target.files||[])];
-    if(!files.length) return;
-    // 画像を 512px 正方形で作成するよう max 値を変更
-Promise.all(
-  files.map(f => resizeToBase64(f, 512)                 // ←★ 600 → 512
-    .then(data => ({ data, name: f.name, selected: false })))
-)
-
-      .then(list=>{
-        images=images.concat(list); saveImages();
-        currentPage=1; renderAll(); uploadInput.value="";
-      });
-  };
-  /* 画像を 600px 正方形 PNG に縮小して Base64 文字列で返す */
-function resizeToBase64(file, max = 600) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      /* 縦横どちらか長い方を max に合わせる */
-      const scale = Math.min(max / img.width, max / img.height, 1);
-      const w = img.width * scale;
-      const h = img.height * scale;
-
-      /* 正方形キャンバスを作り中央に配置 */
-      const cv = document.createElement("canvas");
-      const side = Math.max(w, h);          // 一番長い辺＝キャンバス一辺
-      cv.width = cv.height = side;
-      const ctx = cv.getContext("2d");
-      ctx.drawImage(img, (side - w) / 2, (side - h) / 2, w, h);
-
-      /* PNG 出力（quality 指定は不要） */
-      resolve(cv.toDataURL("image/png"));
-    };
-    img.src = URL.createObjectURL(file);
-  });
-}
-
-  /* === localStorage === */
-  function saveImages(){try{localStorage.setItem(KEY,JSON.stringify(images));}
-    catch{alert("保存容量がいっぱいです。いくつか画像を削除してください。")}}
-  function loadImages(){const j=localStorage.getItem(KEY);if(j) images=JSON.parse(j);}  
-
-  /* === Gallery === */
-  function renderGallery(){
-    galleryEl.innerHTML="";
-    const start=(currentPage-1)*perPage;
-    images.slice(start,start+perPage).forEach((img,i)=>{
-      const w=document.createElement("div");
-      w.className="thumb"+(img.selected?" selected":"");
-      w.onclick=()=>toggle(start+i);
-      w.innerHTML=`<img src="${img.data}" alt="${img.name}" loading="lazy">\n                   <span class="check">✓</span>`;
-      galleryEl.appendChild(w);
+    fileInput.addEventListener("change", (e) => {
+      selected = e.target.files[0] || null;
+      btn.disabled = !selected;
+      resultImg.src = "";
+      msg.textContent = "";
     });
-  }
-  function toggle(idx){images[idx].selected=!images[idx].selected;saveImages();renderGallery();updateButtons();}
 
-  /* === Pagination === */
-  function renderPagination(){
-    paginationEl.innerHTML="";
-    const tot=Math.max(1,Math.ceil(images.length/perPage));
-    const mk=(t,d,cb)=>{const b=document.createElement("button");b.textContent=t;b.disabled=d;b.onclick=cb;return b};
-    paginationEl.append(mk("<",currentPage===1,()=>{currentPage--;renderAll()}));
-    for(let i=1;i<=tot;i++){
-      const b=mk(i,false,()=>{currentPage=i;renderAll()});
-      if(i===currentPage) b.classList.add("active");
-      paginationEl.append(b);
+    btn.addEventListener("click", async () => {
+      if (!selected) return;
+
+      btn.disabled = true;
+      msg.textContent = "アップロード中…";
+
+      /* --- 1. 512×512 PNG Base64 にリサイズ --- */
+      const blob512 = await resize(selected, 512);
+      const form    = new FormData();
+      form.append("file", blob512, "image.png");
+
+      /* --- 2. Netlify Function へ POST --- */
+      try {
+        const res = await fetch("/.netlify/functions/lineart", {
+          method: "POST",
+          body: form
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const { url, error } = await res.json();
+        if (error) throw new Error(error);
+
+        /* --- 3. 線画表示 --- */
+        resultImg.src = url;
+        msg.textContent = "完了！";
+      } catch (err) {
+        msg.textContent = `エラー: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    /* ---------- helper: リサイズ ---------- */
+    async function resize(file, size) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const cvs = document.createElement("canvas");
+          cvs.width = cvs.height = size;
+          const ctx = cvs.getContext("2d");
+          ctx.drawImage(img, 0, 0, size, size);
+          cvs.toBlob((b) => (b ? resolve(b) : reject("toBlob failed")), "image/png");
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
     }
-    paginationEl.append(mk(">",currentPage===tot,()=>{currentPage++;renderAll()}));
-  }
-
-  /* === Buttons === */
-  function updateButtons(){
-    convertBtn.disabled=!images.some(i=>i.selected);
-  }
-
-  // ---------- ★ ぬりえ化処理を追加 ----------
- convertBtn.onclick = async () => {
-  if (convertBtn.disabled) return;
-  const target = images.find(i => i.selected);
-  if (!target) return;
-
-  /* --- ここから置換 --- */
-showLoading();
-try {
-  const blob = dataURLtoBlob(target.data);   // ← target は先頭で定義済み
-  const fd   = new FormData();
-  fd.append("file", blob, "upload.png");
-
-  const res = await fetch("/.netlify/functions/lineart-background", {
-    method: "POST",
-    body: fd            // multipart/form-data を自動付与
-  });
-
-  if (res.status !== 202) throw new Error("job start failed");
-  const jobId = res.headers.get("x-job-id");
-  if (!jobId) throw new Error("no job id");
-
-  /* 以降ポーリングはそのまま */
-  let url = null, error = null, t0 = Date.now();
-  while (!url && !error) {
-    await new Promise(r => setTimeout(r, 1500));
-    const st = await fetch(`/.netlify/functions/lineart-result?id=${jobId}`);
-    if (st.status === 200) ({ url, error } = await st.json());
-    if (Date.now() - t0 > 60_000) throw new Error("timeout");
-  }
-  if (error) throw new Error(error);
-  window.open(url, "_blank");
-} catch (e) {
-  console.error(e);
-  alert("エラーが発生しました:\n" + e.message);
-} finally {
-  hideLoading();
-};
- };
-/* --- ここまで置換 --- */
-
-
-
-
-  makeBtn.onclick   =()=>alert("ぬりえを作るボタンが押されました！");
-  clearBtn.onclick  =()=>{ if(confirm("保存データを削除しますか？")){localStorage.removeItem(KEY);images=[];renderAll();} };
-
-  /* === Loading === */
-  function showLoading(){ loadingEl.classList.add("show"); convertBtn.disabled=true; }
-  function hideLoading(){ loadingEl.classList.remove("show"); updateButtons(); }
-  cancelBtn.onclick=hideLoading;
-
-  /* === Helpers === */
-  function renderAll(){ renderGallery(); renderPagination(); updateButtons(); }
-
-  // DataURL → Blob 変換
-  function dataURLtoBlob(dataURL){
-    const [meta,base64]=dataURL.split(",");
-    const mime=meta.match(/:(.*?);/)[1];
-    const bin=atob(base64); const len=bin.length;
-    const u8=new Uint8Array(len);
-    for(let i=0;i<len;i++) u8[i]=bin.charCodeAt(i);
-    return new Blob([u8],{type:mime});
-  }
   </script>
 </body>
 </html>

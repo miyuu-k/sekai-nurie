@@ -1,0 +1,6 @@
+[functions]
+  directory = "netlify/functions"   # ここに .js を置く
+
+[build]
+  command = "npm install"
+  publish = "."                     # ルート直下を公開
