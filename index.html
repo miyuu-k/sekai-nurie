@@ -61,8 +61,12 @@
   uploadInput.onchange=e=>{
     const files=[...(e.target.files||[])];
     if(!files.length) return;
-    Promise.all(files.map(f=>resizeToBase64(f,600,0.7)
-      .then(data=>({data,name:f.name,selected:false}))))
+    // 画像を 512px 正方形で作成するよう max 値を変更
+Promise.all(
+  files.map(f => resizeToBase64(f, 512)                 // ←★ 600 → 512
+    .then(data => ({ data, name: f.name, selected: false })))
+)
+
       .then(list=>{
         images=images.concat(list); saveImages();
         currentPage=1; renderAll(); uploadInput.value="";
