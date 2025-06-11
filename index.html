@@ -131,33 +131,45 @@ function resizeToBase64(file, max = 600) {
   }
 
   // ---------- ★ ぬりえ化処理を追加 ----------
-  convertBtn.onclick = async () => {
+ convertBtn.onclick = async () => {
   if (convertBtn.disabled) return;
-  const targets = images.filter(i => i.selected);
-  if (!targets.length) return;
+  const target = images.find(i => i.selected);
+  if (!target) return;
 
   showLoading();
   try {
-    /* ---- DataURL だけを JSON で送信 ---- */
-    const payload = { dataURL: targets[0].data };
-
-    const r = await fetch("/.netlify/functions/lineart-background", {
+    /* ❶ 生成ジョブ開始 */
+    const start = await fetch("/.netlify/functions/lineart-background", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ dataURL: target.data })
     });
+    if (start.status !== 202) throw new Error("job start failed");
+    const { id } = await start.json();
 
-    if (!r.ok) throw new Error("API Error");
-    const { url } = await r.json();
-
-    window.open(url, "_blank");          // 生成画像を表示
+    /* ❷ ポーリングで結果取得（最大 60 秒） */
+    let url = null, error = null;
+    const t0 = Date.now();
+    while (!url && !error) {
+      await new Promise(r => setTimeout(r, 1500));
+      const res = await fetch(`/.netlify/functions/lineart-result?id=${id}`);
+      if (res.status === 200) {
+        const j = await res.json();
+        url = j.url;
+        error = j.error;
+      }
+      if (Date.now() - t0 > 60_000) throw new Error("timeout");
+    }
+    if (error) throw new Error(error);
+    window.open(url, "_blank");
   } catch (e) {
     console.error(e);
-    alert("エラーが発生しました");
+    alert("エラーが発生しました:\n" + e.message);
   } finally {
     hideLoading();
   }
 };
+
 
   makeBtn.onclick   =()=>alert("ぬりえを作るボタンが押されました！");
   clearBtn.onclick  =()=>{ if(confirm("保存データを削除しますか？")){localStorage.removeItem(KEY);images=[];renderAll();} };

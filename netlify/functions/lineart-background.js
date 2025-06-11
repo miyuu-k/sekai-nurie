@@ -1,65 +1,50 @@
-// netlify/functions/lineart-background.js
 import OpenAI from "openai";
-import * as multipart from "parse-multipart";
 import { Readable } from "stream";
+import { randomUUID } from "crypto";
+import { writeFile } from "fs/promises";
 
 export const handler = async (event) => {
-  /* ---------- 呼び出し直後にログ ---------- */
-  console.log("invoked", new Date().toISOString());
-  console.log("method", event.httpMethod, "path", event.rawUrl);
-
-  /* ---------- メソッド判定 ---------- */
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "POST only" };
   }
 
-  /* ---------- JSON か multipart か判定 ---------- */
-  const isJson = (event.headers["content-type"] || "").includes("application/json");
+  /* ---- DataURL を受け取る ---- */
+  const { dataURL } = JSON.parse(event.body || "{}");
+  if (!dataURL) return { statusCode: 400, body: "No dataURL" };
 
-  let imgBuf;
-  if (isJson) {
-    /* ======= JSON: { dataURL: ... } ======= */
-    const { dataURL } = JSON.parse(event.body || "{}");
-    if (!dataURL) return { statusCode: 400, body: "No dataURL" };
+  /* ---- base64 → Buffer ---- */
+  const base64 = dataURL.split(",")[1];
+  const buf = Buffer.from(base64, "base64");
 
-    // DataURL -> Buffer
-    const base64 = dataURL.split(",")[1];
-    imgBuf = Buffer.from(base64, "base64");
-  } else {
-    /* ======= multipart/form-data (未使用ならスキップ可) ======= */
-    const boundary = multipart.getBoundary(event.headers["content-type"]);
-    const parts = multipart.Parse(Buffer.from(event.body, "base64"), boundary);
-    if (!parts.length) return { statusCode: 400, body: "No file" };
-    imgBuf = parts[0].data;
+  /* 画像 4 MB 制限チェック（DALL·E 2 要件） */
+  if (buf.length > 4 * 1024 * 1024) {
+    return { statusCode: 400, body: "Image > 4 MB" };
   }
 
-  /* ---------- 4MB/PNG チェック（簡易） ---------- */
-  if (imgBuf.length > 4 * 1024 * 1024) {
-    return { statusCode: 400, body: "Image too large (>4MB)" };
-  }
+  const id = randomUUID();            // ジョブ ID
+  const tmpPath = `/tmp/${id}.json`;  // 同一インスタンスで数分保持
 
-  /* ---------- OpenAI DALL·E 2 Variations ---------- */
-  try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const stream = Readable.from(imgBuf);
+  /* ---- バックグラウンドで生成 ---- */
+  (async () => {
+    try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const res = await openai.images.createVariation({
+        model: "dall-e-2",
+        image: Readable.from(buf),
+        n: 1,
+        size: "512x512"
+      });
+      await writeFile(tmpPath, JSON.stringify({ url: res.data[0].url }));
+      console.log("finish", id);
+    } catch (e) {
+      await writeFile(tmpPath, JSON.stringify({ error: e.message }));
+      console.error("error", id, e);
+    }
+  })();
 
-    const res = await openai.images.createVariation({
-      model: "dall-e-2",
-      image: stream,
-      n: 1,
-      size: "512x512"          // 512 だと速くて4MB制限にも余裕
-    });
-
-    const url = res.data[0].url;
-    console.log("generated", url);
-
-    return {
-      statusCode: 202,                   // background関数なので 202
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url })
-    };
-  } catch (e) {
-    console.error("OpenAI error", e);
-    return { statusCode: 500, body: "OpenAI error" };
-  }
+  return {
+    statusCode: 202,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id })
+  };
 };
