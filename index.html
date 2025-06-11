@@ -138,37 +138,36 @@ function resizeToBase64(file, max = 600) {
 
   showLoading();
   try {
-    /* ❶ 生成ジョブ開始 */
-    const start = await fetch("/.netlify/functions/lineart-background", {
+    /* ① ジョブ開始 */
+    const res = await fetch("/.netlify/functions/lineart-background", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dataURL: target.data })
     });
-    if (start.status !== 202) throw new Error("job start failed");
-    const { id } = await start.json();
+    if (res.status !== 202) throw new Error("job start failed");
 
-    /* ❷ ポーリングで結果取得（最大 60 秒） */
-    let url = null, error = null;
-    const t0 = Date.now();
+    const id = res.headers.get("x-job-id");     // ★ ここで取得
+    if (!id) throw new Error("no job id");
+
+    /* ② ポーリング */
+    let url = null, error = null, t0 = Date.now();
     while (!url && !error) {
       await new Promise(r => setTimeout(r, 1500));
-      const res = await fetch(`/.netlify/functions/lineart-result?id=${id}`);
-      if (res.status === 200) {
-        const j = await res.json();
-        url = j.url;
-        error = j.error;
+      const st = await fetch(`/.netlify/functions/lineart-result?id=${id}`);
+      if (st.status === 200) {
+        ({ url, error } = await st.json());
       }
       if (Date.now() - t0 > 60_000) throw new Error("timeout");
     }
     if (error) throw new Error(error);
     window.open(url, "_blank");
   } catch (e) {
-    console.error(e);
     alert("エラーが発生しました:\n" + e.message);
   } finally {
     hideLoading();
   }
 };
+
 
 
   makeBtn.onclick   =()=>alert("ぬりえを作るボタンが押されました！");

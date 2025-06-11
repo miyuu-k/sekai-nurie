@@ -1,3 +1,4 @@
+// netlify/functions/lineart-background.js
 import OpenAI from "openai";
 import { Readable } from "stream";
 import { randomUUID } from "crypto";
@@ -8,23 +9,17 @@ export const handler = async (event) => {
     return { statusCode: 405, body: "POST only" };
   }
 
-  /* ---- DataURL を受け取る ---- */
   const { dataURL } = JSON.parse(event.body || "{}");
   if (!dataURL) return { statusCode: 400, body: "No dataURL" };
 
-  /* ---- base64 → Buffer ---- */
-  const base64 = dataURL.split(",")[1];
-  const buf = Buffer.from(base64, "base64");
-
-  /* 画像 4 MB 制限チェック（DALL·E 2 要件） */
+  const buf = Buffer.from(dataURL.split(",")[1], "base64");
   if (buf.length > 4 * 1024 * 1024) {
     return { statusCode: 400, body: "Image > 4 MB" };
   }
 
-  const id = randomUUID();            // ジョブ ID
-  const tmpPath = `/tmp/${id}.json`;  // 同一インスタンスで数分保持
+  const id = randomUUID();
+  const tmpPath = `/tmp/${id}.json`;
 
-  /* ---- バックグラウンドで生成 ---- */
   (async () => {
     try {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -42,9 +37,11 @@ export const handler = async (event) => {
     }
   })();
 
+  /* ←──────────────────────────────────────┐
+     Background Function なので body は空でも
+     OK。ジョブ ID を header に乗せて返す。 */
   return {
     statusCode: 202,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id })
+    headers: { "x-job-id": id }
   };
 };
