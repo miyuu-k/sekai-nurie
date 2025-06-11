@@ -136,37 +136,43 @@ function resizeToBase64(file, max = 600) {
   const target = images.find(i => i.selected);
   if (!target) return;
 
-  showLoading();
-  try {
-    /* ① ジョブ開始 */
-    const res = await fetch("/.netlify/functions/lineart-background", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dataURL: target.data })
-    });
-    if (res.status !== 202) throw new Error("job start failed");
+  /* --- ここから置換 --- */
+showLoading();
+try {
+  /* DataURL → Blob → FormData */
+  const blob = dataURLtoBlob(targets[0].data);    // dataURLtoBlob は既存の関数
+  const fd   = new FormData();
+  fd.append("file", blob, "upload.png");          // ★ multipart フィールド名は「file」
 
-    const id = res.headers.get("x-job-id");     // ★ ここで取得
-    if (!id) throw new Error("no job id");
+  /* 背景関数に POST  */
+  const res = await fetch("/.netlify/functions/lineart-background", {
+    method: "POST",
+    body: fd       // headers は付けない（ブラウザが自動で multipart を付与）
+  });
 
-    /* ② ポーリング */
-    let url = null, error = null, t0 = Date.now();
-    while (!url && !error) {
-      await new Promise(r => setTimeout(r, 1500));
-      const st = await fetch(`/.netlify/functions/lineart-result?id=${id}`);
-      if (st.status === 200) {
-        ({ url, error } = await st.json());
-      }
-      if (Date.now() - t0 > 60_000) throw new Error("timeout");
-    }
-    if (error) throw new Error(error);
-    window.open(url, "_blank");
-  } catch (e) {
-    alert("エラーが発生しました:\n" + e.message);
-  } finally {
-    hideLoading();
+  if (res.status !== 202) throw new Error("job start failed");
+  const jobId = res.headers.get("x-job-id");
+  if (!jobId) throw new Error("no job id");
+
+  /* 結果ポーリング */
+  let url = null, error = null, t0 = Date.now();
+  while (!url && !error) {
+    await new Promise(r => setTimeout(r, 1500));
+    const st = await fetch(`/.netlify/functions/lineart-result?id=${jobId}`);
+    if (st.status === 200) ({ url, error } = await st.json());
+    if (Date.now() - t0 > 60_000) throw new Error("timeout");
   }
+  if (error) throw new Error(error);
+  window.open(url, "_blank");
+} catch (e) {
+  console.error(e);
+  alert("エラーが発生しました:\n" + e.message);
+} finally {
+  hideLoading();
 };
+ };
+/* --- ここまで置換 --- */
+
 
 
 
