@@ -2,6 +2,7 @@
   "type": "module",
   "dependencies": {
     "openai": "^4.27.0",
-    "parse-multipart": "^1.0.4"
+    "parse-multipart": "^1.0.4",
+    "uuid": "^9.0.1"
   }
 }

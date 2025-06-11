@@ -1,81 +1,52 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <title>ぬりえ線画ジェネレーター</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <h1>ぬりえ線画ジェネレーター</h1>
+<!DOCTYPE html><html lang="ja"><head>
+<meta charset="UTF-8"><title>線画ジェネレーター</title>
+<link rel="stylesheet" href="style.css"></head><body>
+<h1>ぬりえ線画ジェネレーター</h1>
+<input type="file" id="file" accept="image/*">
+<button id="btn" disabled>線画にする</button>
+<p id="msg"></p><img id="out" alt="">
+<script>
+const $ = (id)=>document.getElementById(id);
+let file=null;
 
-  <input type="file" id="file" accept="image/*" />
-  <button id="btn" disabled>ぬりえを作る</button>
+$("file").onchange = (e)=>{file=e.target.files[0];$("btn").disabled=!file;$("out").src="";$("msg").textContent="";};
 
-  <p id="msg"></p>
-  <img id="result" alt="線画が表示されます" />
+$("btn").onclick = async ()=>{
+  if(!file)return;
+  $("btn").disabled=true;$("msg").textContent="アップロード中…";
+  try{
+    const blob = await resize(file,512);
+    const fd=new FormData();fd.append("file",blob,"img.png");
+    /* 1. BG 関数起動 */
+    const bgRes = await fetch("/.netlify/functions/lineart-background",{method:"POST",body:fd});
+    if(!bgRes.ok) throw new Error(await bgRes.text());
+    const {jobId}=await bgRes.json();
 
-  <script>
-    const fileInput = document.getElementById("file");
-    const btn       = document.getElementById("btn");
-    const msg       = document.getElementById("msg");
-    const resultImg = document.getElementById("result");
-
-    let selected;   // File オブジェクト保持
-
-    fileInput.addEventListener("change", (e) => {
-      selected = e.target.files[0] || null;
-      btn.disabled = !selected;
-      resultImg.src = "";
-      msg.textContent = "";
-    });
-
-    btn.addEventListener("click", async () => {
-      if (!selected) return;
-
-      btn.disabled = true;
-      msg.textContent = "アップロード中…";
-
-      /* --- 1. 512×512 PNG Base64 にリサイズ --- */
-      const blob512 = await resize(selected, 512);
-      const form    = new FormData();
-      form.append("file", blob512, "image.png");
-
-      /* --- 2. Netlify Function へ POST --- */
-      try {
-        const res = await fetch("/.netlify/functions/lineart", {
-          method: "POST",
-          body: form
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const { url, error } = await res.json();
-        if (error) throw new Error(error);
-
-        /* --- 3. 線画表示 --- */
-        resultImg.src = url;
-        msg.textContent = "完了！";
-      } catch (err) {
-        msg.textContent = `エラー: ${err.message}`;
-      } finally {
-        btn.disabled = false;
-      }
-    });
-
-    /* ---------- helper: リサイズ ---------- */
-    async function resize(file, size) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          const cvs = document.createElement("canvas");
-          cvs.width = cvs.height = size;
-          const ctx = cvs.getContext("2d");
-          ctx.drawImage(img, 0, 0, size, size);
-          cvs.toBlob((b) => (b ? resolve(b) : reject("toBlob failed")), "image/png");
-        };
-        img.onerror = reject;
-        img.src = URL.createObjectURL(file);
-      });
+    /* 2. ポーリングで結果取得 */
+    let url=null, retry=0;
+    while(retry<40){      // 最大 40×1.5s ≒ 1 分
+      const r=await fetch(`/.netlify/functions/lineart-result?id=${jobId}`);
+      if(r.status===200){ ({url}=await r.json());break;}
+      await new Promise(s=>setTimeout(s,1500));
+      retry++;
     }
-  </script>
-</body>
-</html>
+    if(!url) throw new Error("timeout");
+    $("out").src=url;$("msg").textContent="完了！";
+  }catch(e){$("msg").textContent="ERR: "+e.message;}
+  $("btn").disabled=false;
+};
+
+/* helper: 画像を 512px PNG に */
+function resize(file,size){
+  return new Promise((ok,ng)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement("canvas");
+      c.width=c.height=size;
+      c.getContext("2d").drawImage(img,0,0,size,size);
+      c.toBlob(b=>b?ok(b):ng("blob err"),"image/png");
+    };
+    img.onerror=ng;img.src=URL.createObjectURL(file);
+  });
+}
+</script></body></html>
