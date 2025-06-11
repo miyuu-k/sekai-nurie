@@ -141,7 +141,7 @@ function resizeToBase64(file, max = 600) {
       const fd = new FormData();
       fd.append("file", dataURLtoBlob(targets[0].data), "upload.jpg");
 
-      const r = await fetch("/.netlify/functions/lineart", {
+     const r = await fetch("/.netlify/functions/lineart-background", {
         method: "POST",
         body: fd
       });
