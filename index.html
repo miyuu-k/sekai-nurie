@@ -139,22 +139,20 @@ function resizeToBase64(file, max = 600) {
   /* --- ここから置換 --- */
 showLoading();
 try {
-  /* DataURL → Blob → FormData */
-  const blob = dataURLtoBlob(targets[0].data);    // dataURLtoBlob は既存の関数
+  const blob = dataURLtoBlob(target.data);   // ← target は先頭で定義済み
   const fd   = new FormData();
-  fd.append("file", blob, "upload.png");          // ★ multipart フィールド名は「file」
+  fd.append("file", blob, "upload.png");
 
-  /* 背景関数に POST  */
   const res = await fetch("/.netlify/functions/lineart-background", {
     method: "POST",
-    body: fd       // headers は付けない（ブラウザが自動で multipart を付与）
+    body: fd            // multipart/form-data を自動付与
   });
 
   if (res.status !== 202) throw new Error("job start failed");
   const jobId = res.headers.get("x-job-id");
   if (!jobId) throw new Error("no job id");
 
-  /* 結果ポーリング */
+  /* 以降ポーリングはそのまま */
   let url = null, error = null, t0 = Date.now();
   while (!url && !error) {
     await new Promise(r => setTimeout(r, 1500));
