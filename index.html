@@ -68,20 +68,29 @@
         currentPage=1; renderAll(); uploadInput.value="";
       });
   };
-  function resizeToBase64(file,max,quality){
-    return new Promise(r=>{
-      const img=new Image();
-      img.onload=()=>{
-        const s=Math.min(max/img.width,max/img.height,1);
-        const w=img.width*s, h=img.height*s;
-        const cv=document.createElement("canvas");
-        cv.width=w; cv.height=h;
-        cv.getContext("2d").drawImage(img,0,0,w,h);
-        r(cv.toDataURL("image/jpeg",quality));
-      };
-      img.src=URL.createObjectURL(file);
-    });
-  }
+  /* 画像を 600px 正方形 PNG に縮小して Base64 文字列で返す */
+function resizeToBase64(file, max = 600) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      /* 縦横どちらか長い方を max に合わせる */
+      const scale = Math.min(max / img.width, max / img.height, 1);
+      const w = img.width * scale;
+      const h = img.height * scale;
+
+      /* 正方形キャンバスを作り中央に配置 */
+      const cv = document.createElement("canvas");
+      const side = Math.max(w, h);          // 一番長い辺＝キャンバス一辺
+      cv.width = cv.height = side;
+      const ctx = cv.getContext("2d");
+      ctx.drawImage(img, (side - w) / 2, (side - h) / 2, w, h);
+
+      /* PNG 出力（quality 指定は不要） */
+      resolve(cv.toDataURL("image/png"));
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
 
   /* === localStorage === */
   function saveImages(){try{localStorage.setItem(KEY,JSON.stringify(images));}
