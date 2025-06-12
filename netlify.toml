@@ -2,9 +2,12 @@
   functions = "netlify/functions"
   publish = "."
 
-[functions]
-  # Function実行時間を延長（DALL-E待機用）
+# Function設定は個別に指定
+[functions."generate-coloring"]
   timeout = 30
+
+[functions."generate-coloring-bg"]
+  timeout = 900
 
 [[headers]]
   for = "/*"
@@ -18,3 +21,5 @@
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
+
+  
