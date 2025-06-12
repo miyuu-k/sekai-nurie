@@ -1,7 +1,20 @@
-[functions]
-  directory = "netlify/functions"
-
-# optional: ビルドコマンド
 [build]
-  command = "npm install"
+  functions = "netlify/functions"
   publish = "."
+
+[functions]
+  # Function実行時間を延長（DALL-E待機用）
+  timeout = 30
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+# リダイレクト設定（必要に応じて）
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
