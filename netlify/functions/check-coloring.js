@@ -1,6 +1,8 @@
 exports.handler = async (event) => {
-    const { getStore } = await import('@netlify/blobs');
-    const store = getStore('jobs');
+const { getStore } = (await import('@netlify/blobs')).getStore
+? await import('@netlify/blobs')          // 普通に取れる
+: (await import('@netlify/blobs')).default; // fallback
+
   
     const jobId = event.queryStringParameters.id;
     const data  = await store.get(jobId);
