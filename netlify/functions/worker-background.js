@@ -1,8 +1,8 @@
-const { get, put } = await import('@netlify/blobs');
 const FormData     = require('form-data');
 const fetchN       = (...a) => import('node-fetch').then(({default:f}) => f(...a));
 
 exports.handler = async (event) => {
+  const { get, put } = await import('@netlify/blobs');
   const jobId = event.queryStringParameters.id;
   const raw   = await get(`jobs/${jobId}.json`);
   if (!raw) return { statusCode: 404, body: 'job not found' };
