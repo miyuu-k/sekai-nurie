@@ -7,7 +7,8 @@ const cors = {
 
 // --- ③ handler の中で @netlify/blobs を動的 import ---
 exports.handler = async (event) => {
-  const { set } = await import('@netlify/blobs');  
+  const { nanoid } = await import('nanoid');     // ← 最初に
+  const { set }    = await import('@netlify/blobs');
 
   /* ===== ここから下は元のロジックと同じ ===== */
   if (event.httpMethod === 'OPTIONS')
