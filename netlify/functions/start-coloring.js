@@ -8,12 +8,10 @@ const cors = {
 // --- ③ handler の中で @netlify/blobs を動的 import ---
 exports.handler = async (event) => {
   const { nanoid }   = await import('nanoid');
- // 共通ヘルパ 1 行（各 Function の handler 内ならどこに置いても OK）
-const { getStore } = (await import('@netlify/blobs')).getStore
-? await import('@netlify/blobs')          // 普通に取れる
-: (await import('@netlify/blobs')).default; // fallback
-
-  const store = getStore('jobs'); 
+  const blobsMod     = await import('@netlify/blobs');
+  const getStore     = blobsMod.getStore ?? blobsMod.default?.getStore;
+  if (!getStore) throw new Error('getStore unavailable in @netlify/blobs');
+  const store        = getStore('jobs');
 
   /* ===== ここから下は元のロジックと同じ ===== */
   if (event.httpMethod === 'OPTIONS')

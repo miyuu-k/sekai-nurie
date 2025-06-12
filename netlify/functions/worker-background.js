@@ -1,16 +1,14 @@
 const FormData     = require('form-data');
 const fetchN       = (...a) => import('node-fetch').then(({default:f}) => f(...a));
 
-exports.handler = async (event) => {
-// 共通ヘルパ 1 行（各 Function の handler 内ならどこに置いても OK）
-const { getStore } = (await import('@netlify/blobs')).getStore
-                   ? await import('@netlify/blobs')          // 普通に取れる
-                   : (await import('@netlify/blobs')).default; // fallback
-
-  const store = getStore('jobs');
+eexports.handler = async (event) => {
+  const blobsMod  = await import('@netlify/blobs');
+  const getStore  = blobsMod.getStore ?? blobsMod.default?.getStore;
+  if (!getStore) throw new Error('getStore unavailable');
+  const store     = getStore('jobs');
 
   const jobId = event.queryStringParameters.id;
-  const data  = await store.get(jobId);           // ← ★ ここで get
+  const queue = await store.get(jobId);  
 
   if (!data) return { statusCode: 404, body: 'job not found' };
   const { imageData, maskData } = data;    
