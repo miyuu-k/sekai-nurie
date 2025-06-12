@@ -2,9 +2,7 @@
   publish   = "."
   functions = "netlify/functions"
 
-[functions."generate-coloring"]
-  timeout = 900   # 画像アップロード～生成まで最大 15 分
-
+# 既存の CORS・リダイレクト設定（UI 変更不要で API を呼べるように）
 [[headers]]
   for = "/*"
   [headers.values]

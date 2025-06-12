@@ -1,20 +1,17 @@
 {
   "name": "sekai-nurie",
-  "version": "1.0.1",
-  "description": "子ども向けオリジナルぬりえ作成アプリ",
+  "version": "2.0.0",
   "scripts": {
     "dev": "netlify dev",
-    "build": "echo \"No build step required\"",
-    "deploy": "netlify deploy --prod"
+    "build": "echo \"No build step required\""
   },
   "dependencies": {
-    "node-fetch": "^2.6.12",   
-    "form-data": "^4.0.0"     
+    "@netlify/blobs": "^1.0.0",
+    "form-data": "^4.0.0",
+    "nanoid": "^5.0.2",
+    "node-fetch": "^2.6.12"
   },
   "devDependencies": {
     "netlify-cli": "^17.10.1"
-  },
-  "keywords": ["coloring", "children", "dall-e", "image-generation"],
-  "author": "Your Name",
-  "license": "MIT"
+  }
 }
