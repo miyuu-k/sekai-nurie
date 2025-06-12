@@ -1,6 +1,3 @@
-// --- ① 既存の nanoid はそのまま require で OK ---
-const { nanoid } = require('nanoid');
-
 // --- ② CORS 定数も今まで通りで OK ---
 const cors = {
   'Access-Control-Allow-Origin' : '*',
@@ -10,6 +7,7 @@ const cors = {
 
 // --- ③ handler の中で @netlify/blobs を動的 import ---
 exports.handler = async (event) => {
+  const { nanoid } = await import('nanoid');
   const { put } = await import('@netlify/blobs');   // ★ 追加
 
   /* ===== ここから下は元のロジックと同じ ===== */
