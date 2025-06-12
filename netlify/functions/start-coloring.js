@@ -1,25 +1,33 @@
-const { put }   = require('@netlify/blobs');
+// --- ① 既存の nanoid はそのまま require で OK ---
 const { nanoid } = require('nanoid');
 
+// --- ② CORS 定数も今まで通りで OK ---
+const cors = {
+  'Access-Control-Allow-Origin' : '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
+// --- ③ handler の中で @netlify/blobs を動的 import ---
 exports.handler = async (event) => {
-  const cors = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
-  };
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: cors };
+  const { put } = await import('@netlify/blobs');   // ★ 追加
+
+  /* ===== ここから下は元のロジックと同じ ===== */
+  if (event.httpMethod === 'OPTIONS')
+    return { statusCode: 200, headers: cors };
 
   const { imageData, maskData } = JSON.parse(event.body || '{}');
-  if (!imageData) return { statusCode: 400, headers: cors, body: 'imageData required' };
+  if (!imageData)
+    return { statusCode: 400, headers: cors, body: 'imageData required' };
 
   const jobId = nanoid();
-  await put(`jobs/${jobId}.json`, JSON.stringify({
-    status: 'queued',
-    imageData,
-    maskData
-  }), { metadata: { contentType: 'application/json' } });
 
-  // 背景関数をキック（応答は待たずにすぐ返す）
+  await put(
+    `jobs/${jobId}.json`,
+    JSON.stringify({ status: 'queued', imageData, maskData }),
+    { metadata: { contentType: 'application/json' } }
+  );
+
   await fetch(`${process.env.URL}/.netlify/functions/worker-background?id=${jobId}`);
 
   return { statusCode: 202, headers: cors, body: JSON.stringify({ jobId }) };

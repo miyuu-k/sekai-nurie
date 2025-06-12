@@ -1,6 +1,7 @@
-const { get } = require('@netlify/blobs');
+
 
 exports.handler = async (event) => {
+    const { get } = await import('@netlify/blobs');
   const cors = { 'Access-Control-Allow-Origin': '*' };
   const jobId = event.queryStringParameters.id;
   if (!jobId) return { statusCode: 400, headers: cors, body: 'id required' };

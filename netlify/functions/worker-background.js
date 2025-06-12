@@ -1,4 +1,4 @@
-const { get, put } = require('@netlify/blobs');
+const { get, put } = await import('@netlify/blobs');
 const FormData     = require('form-data');
 const fetchN       = (...a) => import('node-fetch').then(({default:f}) => f(...a));
 
