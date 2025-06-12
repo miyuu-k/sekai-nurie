@@ -1,25 +1,18 @@
 [build]
+  publish   = "."
   functions = "netlify/functions"
-  publish = "."
 
-# Function設定は個別に指定
 [functions."generate-coloring"]
-  timeout = 30
-
-[functions."generate-coloring-bg"]
-  timeout = 900
+  timeout = 900   # 画像アップロード～生成まで最大 15 分
 
 [[headers]]
   for = "/*"
   [headers.values]
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin  = "*"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type"
 
-# リダイレクト設定（必要に応じて）
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from   = "/api/*"
+  to     = "/.netlify/functions/:splat"
   status = 200
-
-  

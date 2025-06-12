@@ -1,110 +1,64 @@
 // netlify/functions/generate-coloring.js
-const fetch = require('node-fetch');
+const { Buffer } = require('node:buffer');
+const FormData  = require('form-data');
+const fetch     = (...a) => import('node-fetch').then(({default:f}) => f(...a));
 
-exports.handler = async (event, context) => {
-  // CORSヘッダーを設定
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
+exports.handler = async (event) => {
+  /* ---------- CORS ---------- */
+  const cors = {
+    'Access-Control-Allow-Origin':  '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
+  if (event.httpMethod === 'OPTIONS')
+    return { statusCode: 200, headers: cors };
 
-  // プリフライトリクエスト対応
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
-  }
+  if (event.httpMethod !== 'POST')
+    return { statusCode: 405, headers: cors, body: 'Method Not Allowed' };
 
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    };
-  }
+  /* ---------- 画像受け取り ---------- */
+  const { imageData } = JSON.parse(event.body || '{}');
+  if (!imageData)
+    return { statusCode: 400, headers: cors, body: 'imageData required' };
 
-  try {
-    // リクエストボディから画像データを取得
-    const { imageData } = JSON.parse(event.body);
-    
-    if (!imageData) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Image data is required' }),
-      };
-    }
+  const img = Buffer.from(
+    imageData.replace(/^data:.*;base64,/, ''), 'base64'
+  );
 
-    console.log('Processing image data...');
+  /* ---------- DALL-E 2 へ ---------- */
+  const form = new FormData();
+  form.append('image', img, { filename: 'photo.png', contentType: 'image/png' });
+  form.append(
+    'prompt',
+    'Make it into a line drawing for coloring, for children up to 6 years old, ' +
+    'use thick lines, black and white, and cutely deformed.'
+  );
+  form.append('model', 'dall-e-2');   // ← DALL-E 2 を明示
+  form.append('n', 1);
+  form.append('size', '512x512');
+  form.append('response_format', 'url');
 
-    // DALL-E 3を使用した画像生成アプローチ
-    // 元画像の説明を元に線画を生成
-    const prompt = `Create a simple black and white line drawing coloring page for children aged 3-6 years old. The drawing should have:
-- Thick, bold black lines (3-4px width)
-- Simple, cute shapes that are easy to color
-- No shading, gradients, or filled areas - only outlines
-- Large areas suitable for coloring with crayons
-- Child-friendly and fun design
-- White background
-- Clear, well-defined boundaries between different sections
-Make it look like a professional children's coloring book page.`;
+  const res = await fetch('https://api.openai.com/v1/images/edits', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      ...form.getHeaders()
+    },
+    body: form
+  });
 
-    // DALL-E 3 APIに画像生成リクエストを送信
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: prompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "standard",
-        response_format: "url"
-      }),
-    });
+  const json = await res.json();
+  if (!res.ok)
+    return { statusCode: res.status, headers: cors,
+             body: JSON.stringify({ error: 'OpenAI error', details: json }) };
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error('OpenAI API Error:', result);
-      return {
-        statusCode: response.status,
-        headers,
-        body: JSON.stringify({ 
-          error: 'Failed to generate coloring page',
-          details: result.error?.message || 'Unknown error',
-          fullError: result
-        }),
-      };
-    }
-
-    console.log('Image generated successfully');
-
-    // 成功時のレスポンス
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        imageUrl: result.data[0].url,
-      }),
-    };
-
-  } catch (error) {
-    console.error('Function Error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ 
-        error: 'Internal server error',
-        details: error.message
-      }),
-    };
-  }
+  /* ---------- フロントへ返却 ---------- */
+  return {
+    statusCode: 200,
+    headers: cors,
+    body: JSON.stringify({
+      success: true,            // ★ 既存フロントのチェックを満たす
+      imageUrl: json.data[0].url
+    })
+  };
 };
