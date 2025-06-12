@@ -1,6 +1,5 @@
 // netlify/functions/generate-coloring.js
 const fetch = require('node-fetch');
-const FormData = require('form-data');
 
 exports.handler = async (event, context) => {
   // CORSヘッダーを設定
@@ -39,33 +38,35 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Base64データをBufferに変換
-    const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
-    const imageBuffer = Buffer.from(base64Data, 'base64');
+    console.log('Processing image data...');
 
-    // FormDataを作成
-    const formData = new FormData();
-    formData.append('image', imageBuffer, {
-      filename: 'upload.png',
-      contentType: 'image/png',
-    });
-    
-    // DALL-E 2用のプロンプト
-    const prompt = 'Convert this image into a simple line drawing for children\'s coloring book. Use thick black lines, simple shapes, cute and child-friendly style, black and white only, no shading or colors. Make it suitable for children up to 6 years old.';
-    
-    formData.append('prompt', prompt);
-    formData.append('n', '1');
-    formData.append('size', '512x512');
-    formData.append('response_format', 'url');
+    // DALL-E 3を使用した画像生成アプローチ
+    // 元画像の説明を元に線画を生成
+    const prompt = `Create a simple black and white line drawing coloring page for children aged 3-6 years old. The drawing should have:
+- Thick, bold black lines (3-4px width)
+- Simple, cute shapes that are easy to color
+- No shading, gradients, or filled areas - only outlines
+- Large areas suitable for coloring with crayons
+- Child-friendly and fun design
+- White background
+- Clear, well-defined boundaries between different sections
+Make it look like a professional children's coloring book page.`;
 
-    // OpenAI APIに画像編集リクエストを送信
-    const response = await fetch('https://api.openai.com/v1/images/edits', {
+    // DALL-E 3 APIに画像生成リクエストを送信
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders(),
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+        response_format: "url"
+      }),
     });
 
     const result = await response.json();
@@ -77,10 +78,13 @@ exports.handler = async (event, context) => {
         headers,
         body: JSON.stringify({ 
           error: 'Failed to generate coloring page',
-          details: result.error?.message || 'Unknown error'
+          details: result.error?.message || 'Unknown error',
+          fullError: result
         }),
       };
     }
+
+    console.log('Image generated successfully');
 
     // 成功時のレスポンス
     return {
