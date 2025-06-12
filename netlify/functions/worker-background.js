@@ -2,12 +2,11 @@ const FormData     = require('form-data');
 const fetchN       = (...a) => import('node-fetch').then(({default:f}) => f(...a));
 
 exports.handler = async (event) => {
-  const { get, set } = await import('@netlify/blobs'); // put → set
-  const jobId = event.queryStringParameters.id;
-  const raw   = await get(`jobs/${jobId}.json`);
-  if (!raw) return { statusCode: 404, body: 'job not found' };
+  const { getStore } = await import('@netlify/blobs');
+  const store = getStore('jobs');
 
-  const { imageData, maskData } = JSON.parse(raw);
+  const jobId = event.queryStringParameters.id;
+  const data  = await store.get(jobId); 
 
   /* ---- OpenAI /images/edits ---- */
   const form = new FormData();
@@ -31,11 +30,6 @@ exports.handler = async (event) => {
   });
   const json = await resp.json();
 
-  await set(
-    `jobs/${jobId}.json`,
-    JSON.stringify({ status:'done', imageUrl }),
-    { metadata:{ contentType:'application/json' } }
-  );
-
-  return { statusCode:200, body:'ok' };
+  await store.set(jobId, { status: 'done', imageUrl });
+  return { statusCode: 200, body: 'ok' };
 };

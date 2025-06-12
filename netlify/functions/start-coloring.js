@@ -7,8 +7,9 @@ const cors = {
 
 // --- ③ handler の中で @netlify/blobs を動的 import ---
 exports.handler = async (event) => {
-  const { nanoid } = await import('nanoid');     // ← 最初に
-  const { set }    = await import('@netlify/blobs');
+  const { nanoid }   = await import('nanoid');
+  const { getStore } = await import('@netlify/blobs');
+  const store = getStore('jobs'); 
 
   /* ===== ここから下は元のロジックと同じ ===== */
   if (event.httpMethod === 'OPTIONS')
@@ -19,6 +20,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: cors, body: 'imageData required' };
 
   const jobId = nanoid();
+  await store.set(jobId, { status: 'queued', imageData, maskData });
 
   await set(
     `jobs/${jobId}.json`,
@@ -27,5 +29,6 @@ exports.handler = async (event) => {
   );
 
   await fetch(`${process.env.URL}/.netlify/functions/worker-background?id=${jobId}`);
-  return { statusCode:202, headers:cors, body:JSON.stringify({ jobId }) };
+
+  return { statusCode: 202, headers: cors, body: JSON.stringify({ jobId }) };
 };
