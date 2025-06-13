@@ -469,10 +469,10 @@
                 updateProgress(10, 'しゃしんを じゅんびしています...');
                 const imageData = await fileToBase64(selectedFile);
                 
-                updateProgress(20, 'Replicate APIに そうしんしています...');
+                updateProgress(20, 'ぬりえ せいせいを かいししています...');
                 
-                // Replicate Functionを呼び出し
-                const response = await fetch('/.netlify/functions/generate-coloring-replicate', {
+                // Step 1: ジョブを開始
+                const startResponse = await fetch('/.netlify/functions/start-coloring-job', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -482,17 +482,23 @@
                     })
                 });
 
-                const result = await response.json();
+                const startResult = await startResponse.json();
 
-                if (!response.ok) {
-                    throw new Error(result.error || 'API呼び出しに失敗しました');
+                if (!startResponse.ok) {
+                    throw new Error(startResult.error || 'ジョブの開始に失敗しました');
                 }
 
+                const jobId = startResult.jobId;
+                updateProgress(30, 'AI が しゃしんを かいせきしています...');
+
+                // Step 2: ジョブの完了を待機（ポーリング）
+                const result = await pollJobStatus(jobId);
+                
                 updateProgress(100, 'ぬりえが できました！');
 
-                if (result.success && result.imageUrl) {
+                if (result.imageUrl) {
                     generatedImageUrl = result.imageUrl;
-                    showResult(result.imageUrl, result.model);
+                    showResult(result.imageUrl, 'Replicate AI');
                 } else {
                     throw new Error('画像の生成に失敗しました');
                 }
@@ -505,6 +511,51 @@
                 generateButton.disabled = false;
                 progressContainer.style.display = 'none';
             }
+        }
+
+        // ジョブの状況をポーリングで確認
+        async function pollJobStatus(jobId) {
+            const maxAttempts = 40; // 最大4分待機
+            let attempts = 0;
+            
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(`/.netlify/functions/check-coloring-job?jobId=${jobId}`);
+                    const result = await response.json();
+
+                    if (result.status === 'completed') {
+                        return result;
+                    } else if (result.status === 'failed') {
+                        throw new Error(result.error || 'Image processing failed');
+                    } else {
+                        // まだ処理中
+                        const progress = Math.min(30 + (attempts * 2), 95);
+                        let message = 'AI が がんばって つくってます...';
+                        
+                        if (result.status === 'processing') {
+                            message = 'もうすこしで できあがり！';
+                        }
+                        
+                        updateProgress(progress, message);
+                        
+                        // 6秒待機してから再確認
+                        await new Promise(resolve => setTimeout(resolve, 6000));
+                        attempts++;
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    attempts++;
+                    
+                    if (attempts >= maxAttempts) {
+                        throw error;
+                    }
+                    
+                    // エラーの場合は少し短めに待機
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+            }
+            
+            throw new Error('処理に時間かかりすぎています。もういちど ためしてください。');
         }
 
         // プログレスバー更新

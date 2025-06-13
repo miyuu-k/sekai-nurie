@@ -2,9 +2,12 @@
   functions = "netlify/functions"
   publish = "."
 
-# Replicate用Function設定（長時間処理対応）
-[functions."generate-coloring-replicate"]
-  timeout = 300
+# 非同期処理用のFunction設定
+[functions."start-coloring-job"]
+  timeout = 10
+
+[functions."check-coloring-job"]
+  timeout = 10
 
 [functions."test-replicate"]
   timeout = 30
