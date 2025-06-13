@@ -9,9 +9,11 @@
     "deploy": "netlify deploy --prod",
     "test": "echo 'No tests specified'"
   },
-  "dependencies": {
-    "node-fetch": "^2.6.12"
-  },
+  
+    "dependencies": {
+      "node-fetch": "^2.6.12"
+    }
+  ,
   "devDependencies": {
     "netlify-cli": "^17.10.1"
   },
