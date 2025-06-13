@@ -115,39 +115,64 @@ exports.handler = async (event, context) => {
     if (dalleResponse.ok) {
       console.log('DALL-E generation successful');
       
+      const responseData = {
+        success: true,
+        imageUrl: dalleResult.data[0].url,
+        detectedObject: detectedObject,
+        model: 'DALL-E-3-Background'
+      };
+      
+      console.log('Returning success response:', responseData);
+      
       return {
         statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          imageUrl: dalleResult.data[0].url,
-          detectedObject: detectedObject,
-          model: 'DALL-E-3-Background'
-        })
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(responseData)
       };
     } else {
       console.error('DALL-E generation failed:', dalleResult);
       
+      const errorData = {
+        success: false,
+        error: dalleResult.error?.message || 'Image generation failed'
+      };
+      
+      console.log('Returning error response:', errorData);
+      
       return {
         statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          error: dalleResult.error?.message || 'Image generation failed'
-        })
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(errorData)
       };
     }
 
   } catch (error) {
-    console.error('Background Function Error:', error);
+    console.error('=== BACKGROUND FUNCTION ERROR ===');
+    console.error('Error type:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    const errorData = {
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    };
+    
+    console.log('Returning catch error response:', errorData);
+    
     return {
       statusCode: 500,
-      headers,
-      body: JSON.stringify({ 
-        success: false,
-        error: 'Internal server error',
-        details: error.message
-      }),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(errorData),
     };
   }
 };

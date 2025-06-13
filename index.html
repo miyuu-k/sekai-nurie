@@ -542,15 +542,32 @@
                 });
                 
                 console.log('Background response status:', response.status);
+                console.log('Background response ok:', response.ok);
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Background processing error:', errorText);
-                    throw new Error(`背景処理に失敗: HTTP ${response.status}: ${errorText}`);
+                let result;
+                try {
+                    // レスポンステキストを取得
+                    const responseText = await response.text();
+                    console.log('Raw response text:', responseText);
+                    console.log('Response text length:', responseText.length);
+                    
+                    if (!responseText || responseText.trim() === '') {
+                        throw new Error('Empty response from server');
+                    }
+                    
+                    // JSONパース
+                    result = JSON.parse(responseText);
+                    console.log('Parsed result:', result);
+                    
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    console.error('Response text was:', responseText);
+                    throw new Error('サーバーからの応答形式が正しくありません');
                 }
 
-                const result = await response.json();
-                console.log('Background processing result:', result);
+                if (!response.ok) {
+                    throw new Error(`背景処理に失敗: HTTP ${response.status}: ${result.error || 'Unknown error'}`);
+                }
                 
                 updateProgress(100, 'ぬりえが できました！');
 
