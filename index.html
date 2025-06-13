@@ -600,125 +600,140 @@
         // メイン処理：ぬりえ生成
         generateButton.addEventListener('click', generateColoring);
 
-        async function generateColoring() {
-            console.log('=== generateColoring function called (フロントエンド直接API版) ===');
-            
-            if (!checkApiKey()) return;
-            
-            if (!selectedFile) {
-                console.error('No file selected');
-                showError('まず しゃしんを えらんでね！');
-                return;
-            }
+       // 原型を保持するDALL-E 3版（generateColoring関数の置き換え用）
 
-            console.log('Selected file:', selectedFile.name, selectedFile.size);
+async function generateColoring() {
+    console.log('=== 原型保持版 DALL-E 3 ===');
+    
+    if (!checkApiKey()) return;
+    
+    if (!selectedFile) {
+        showError('まず しゃしんを えらんでね！');
+        return;
+    }
 
-            // ローディング表示開始
-            loadingContainer.style.display = 'block';
-            generateButton.disabled = true;
-            resultContainer.style.display = 'none';
-            hideError();
-            
-            // プログレスバー表示
-            progressContainer.style.display = 'block';
-            updateProgress(0, 'しゃしんを あっぷろーどしています...');
+    // ローディング表示
+    loadingContainer.style.display = 'block';
+    generateButton.disabled = true;
+    resultContainer.style.display = 'none';
+    hideError();
+    progressContainer.style.display = 'block';
+    updateProgress(0, 'しゃしんを あっぷろーどしています...');
 
-            try {
-                console.log('Starting frontend direct API processing...');
-                
-                // 画像をBase64に変換
-                updateProgress(10, 'しゃしんを じゅんびしています...');
-                
-                let imageData;
-                try {
-                    console.log('Converting to base64...');
-                    imageData = await fileToBase64(selectedFile);
-                    console.log('Base64 conversion completed, length:', imageData.length);
-                } catch (base64Error) {
-                    console.error('Base64 conversion error:', base64Error);
-                    throw new Error('画像の変換に失敗しました: ' + base64Error.message);
-                }
-                
-                updateProgress(30, 'かわいい ぬりえを つくっています... ✨');
+    try {
+        // 画像をBase64に変換
+        updateProgress(10, 'しゃしんを じゅんびしています...');
+        const imageData = await fileToBase64(selectedFile);
+        
+        updateProgress(30, 'AI が しゃしんを かいせきしています...');
 
-                // シンプルなプロンプトで直接生成（画像解析をスキップして確実性を優先）
-                console.log('Generating kawaii coloring page with DALL-E 3...');
-
-                const kawaiPrompt = `Create a cute kawaii-style coloring book page for children ages 3-6. Style: thick black outlines only, white background, big round eyes, chibi proportions, simple shapes, perfect for coloring with crayons. No colors, no shading, just black lines on white background.`;
-
-                const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "dall-e-3",
-                        prompt: kawaiPrompt,
-                        n: 1,
-                        size: "1024x1024",
-                        quality: "standard"
-                    }),
-                });
-
-                console.log('DALL-E 3 response status:', dalle3Response.status);
-
-                if (!dalle3Response.ok) {
-                    const errorData = await dalle3Response.json();
-                    console.error('DALL-E 3 API error:', errorData);
-                    
-                    // エラーメッセージを詳細化
-                    let errorMessage = `DALL-E 3 API error: ${dalle3Response.status}`;
-                    if (errorData.error) {
-                        if (errorData.error.code === 'insufficient_quota') {
-                            errorMessage = 'APIクレジットが不足しています。OpenAIアカウントで使用量を確認してください 💳';
-                        } else if (errorData.error.code === 'invalid_api_key') {
-                            errorMessage = 'APIキーが無効です。正しいAPIキーを設定してください 🔑';
-                        } else {
-                            errorMessage = errorData.error.message || errorMessage;
+        // Step 1: GPT-4Vで詳細な画像解析
+        console.log('Analyzing image details with GPT-4V...');
+        
+        let imageDescription = "cute animal";
+        try {
+            const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "この画像を詳しく説明してください。動物の種類、色、ポーズ、特徴的な部分を含めて、50語以内で簡潔に教えてください。"
+                                },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: imageData
+                                    }
+                                }
+                            ]
                         }
-                    }
-                    throw new Error(errorMessage);
-                }
+                    ],
+                    max_tokens: 100
+                }),
+            });
 
-                const dalle3Result = await dalle3Response.json();
-                console.log('DALL-E 3 result:', dalle3Result);
-
-                if (dalle3Result.data && dalle3Result.data.length > 0) {
-                    updateProgress(100, 'かわいい ぬりえが できました！');
-                    
-                    console.log('DALL-E 3 kawaii generation successful!');
-                    generatedImageUrl = dalle3Result.data[0].url;
-                    
-                    // 結果表示
-                    showResult(dalle3Result.data[0].url, 'DALL-E-3-Direct-API', '🎨 AI が つくった かわいい ぬりえです！');
-                } else {
-                    throw new Error('DALL-E 3 generation returned no results');
+            if (analysisResponse.ok) {
+                const analysisResult = await analysisResponse.json();
+                if (analysisResult.choices && analysisResult.choices[0]) {
+                    imageDescription = analysisResult.choices[0].message.content.trim();
+                    console.log('Image description:', imageDescription);
                 }
-                
-            } catch (error) {
-                console.error('=== MAIN ERROR HANDLER ===');
-                console.error('Error type:', error.name);
-                console.error('Error message:', error.message);
-                console.error('Error stack:', error.stack);
-                
-                // エラーメッセージを詳細化
-                let errorMessage = error.message;
-                if (error.message.includes('401')) {
-                    errorMessage = 'OpenAI APIキーが正しく設定されていません 🔑\nAPIキーを確認してください';
-                } else if (error.message.includes('429')) {
-                    errorMessage = 'API使用量の上限に達しました ⏰\nしばらく待ってから再試行してください';
-                } else if (error.message.includes('network') || error.message.includes('fetch')) {
-                    errorMessage = 'ネットワーク接続に問題があります 🌐\nインターネット接続を確認してください';
-                }
-                
-                showError(`エラーが発生しました 😢\n\n${errorMessage}\n\nもういちど ためしてね！`);
-            } finally {
-                loadingContainer.style.display = 'none';
-                generateButton.disabled = false;
-                progressContainer.style.display = 'none';
             }
+        } catch (analysisError) {
+            console.log('Image analysis failed:', analysisError);
         }
+
+        updateProgress(50, 'かわいい ぬりえを つくっています... ✨');
+
+        // Step 2: 原型を保持したプロンプト生成
+        const preservingPrompt = `Create a coloring book page based on this description: "${imageDescription}"
+
+IMPORTANT: Keep the same subject, pose, and main characteristics as described.
+
+Style requirements:
+- Convert to kawaii cute style but MAINTAIN the original subject and pose
+- Thick black outlines (4-5px) perfect for children ages 3-6
+- Pure white background
+- Big round kawaii eyes but keep the overall shape and features of the original
+- Simplify details but preserve the main structure and pose
+- Perfect for coloring with crayons
+- ONLY black outlines on white background - no colors, no shading
+
+Focus: Transform the SAME subject into a cute coloring book style, don't create something completely different.`;
+
+        console.log('Generating preserving coloring page with DALL-E 3...');
+
+        const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: "dall-e-3",
+                prompt: preservingPrompt,
+                n: 1,
+                size: "1024x1024",
+                quality: "standard"
+            }),
+        });
+
+        console.log('DALL-E 3 response status:', dalle3Response.status);
+
+        if (!dalle3Response.ok) {
+            const errorData = await dalle3Response.json();
+            console.error('DALL-E 3 API error:', errorData);
+            throw new Error(`DALL-E 3 API Error: ${dalle3Response.status} - ${errorData.error?.message || 'Unknown error'}`);
+        }
+
+        const dalle3Result = await dalle3Response.json();
+
+        if (dalle3Result.data && dalle3Result.data.length > 0) {
+            updateProgress(100, 'かわいい ぬりえが できました！');
+            generatedImageUrl = dalle3Result.data[0].url;
+            showResult(dalle3Result.data[0].url, 'DALL-E-3-Preserving', `📸 「${imageDescription}」をもとに作成！`);
+        } else {
+            throw new Error('No image generated');
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        showError(`エラーが発生しました: ${error.message}`);
+    } finally {
+        loadingContainer.style.display = 'none';
+        generateButton.disabled = false;
+        progressContainer.style.display = 'none';
+    }
+}
 
         // プログレスバー更新
         function updateProgress(percent, message) {
