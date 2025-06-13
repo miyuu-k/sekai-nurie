@@ -602,8 +602,10 @@
 
        // 原型を保持するDALL-E 3版（generateColoring関数の置き換え用）
 
+// 完全白黒版DALL-E 3（generateColoring関数の置き換え用）
+
 async function generateColoring() {
-    console.log('=== 原型保持版 DALL-E 3 ===');
+    console.log('=== 完全白黒版 DALL-E 3 ===');
     
     if (!checkApiKey()) return;
     
@@ -627,70 +629,65 @@ async function generateColoring() {
         
         updateProgress(30, 'AI が しゃしんを かいせきしています...');
 
-        // Step 1: GPT-4Vで詳細な画像解析
-        console.log('Analyzing image details with GPT-4V...');
-        
-        let imageDescription = "cute animal";
-        try {
-            const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    model: "gpt-4o",
-                    messages: [
-                        {
-                            role: "user",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "この画像を詳しく説明してください。動物の種類、色、ポーズ、特徴的な部分を含めて、50語以内で簡潔に教えてください。"
-                                },
-                                {
-                                    type: "image_url",
-                                    image_url: {
-                                        url: imageData
-                                    }
+        // GPT-4Vで画像を分析
+        const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: "この画像の動物の種類、ポーズ、表情を簡潔に説明してください。「A [動物] [ポーズ] with [表情]」の形式で答えてください。"
+                            },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: imageData
                                 }
-                            ]
-                        }
-                    ],
-                    max_tokens: 100
-                }),
-            });
+                            }
+                        ]
+                    }
+                ],
+                max_tokens: 50
+            }),
+        });
 
-            if (analysisResponse.ok) {
-                const analysisResult = await analysisResponse.json();
-                if (analysisResult.choices && analysisResult.choices[0]) {
-                    imageDescription = analysisResult.choices[0].message.content.trim();
-                    console.log('Image description:', imageDescription);
-                }
+        let basePrompt = "A cute cat looking up with curious expression";
+        if (analysisResponse.ok) {
+            const analysisResult = await analysisResponse.json();
+            if (analysisResult.choices && analysisResult.choices[0]) {
+                basePrompt = analysisResult.choices[0].message.content.trim();
+                console.log('Base prompt:', basePrompt);
             }
-        } catch (analysisError) {
-            console.log('Image analysis failed:', analysisError);
         }
 
-        updateProgress(50, 'かわいい ぬりえを つくっています... ✨');
+        updateProgress(50, '完全白黒の ぬりえを つくっています... ✨');
 
-        // Step 2: 原型を保持したプロンプト生成
-        const preservingPrompt = `Create a coloring book page based on this description: "${imageDescription}"
+        // 完全白黒を強制するプロンプト
+        const pureBlackWhitePrompt = `${basePrompt}, line art coloring book page.
 
-IMPORTANT: Keep the same subject, pose, and main characteristics as described.
+CRITICAL REQUIREMENTS - MUST BE FOLLOWED:
+🖤 ONLY pure black (#000000) lines on pure white (#FFFFFF) background
+🚫 ABSOLUTELY NO colors, NO gray, NO brown, NO patterns, NO shading, NO fills
+⚫ Think like a black ink pen drawing on white paper - nothing else exists
+📖 Classic coloring book style - thick black outlines (4-5px) with empty white spaces inside
+👶 Perfect for children ages 3-6 to color with crayons
+🎨 Kawaii cute style but maintain the original pose and features
+👁️ Big round eyes but keep the same facial expression
+🐾 Simplify details but preserve the main characteristics
 
-Style requirements:
-- Convert to kawaii cute style but MAINTAIN the original subject and pose
-- Thick black outlines (4-5px) perfect for children ages 3-6
-- Pure white background
-- Big round kawaii eyes but keep the overall shape and features of the original
-- Simplify details but preserve the main structure and pose
-- Perfect for coloring with crayons
-- ONLY black outlines on white background - no colors, no shading
+FORBIDDEN: Any color other than pure black and pure white. No gray tones, no brown, no patterns, no shading, no gradients.
 
-Focus: Transform the SAME subject into a cute coloring book style, don't create something completely different.`;
+RESULT: A clean black and white line drawing ready for coloring.`;
 
-        console.log('Generating preserving coloring page with DALL-E 3...');
+        console.log('Generating pure black and white coloring page...');
 
         const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
             method: 'POST',
@@ -700,27 +697,24 @@ Focus: Transform the SAME subject into a cute coloring book style, don't create 
             },
             body: JSON.stringify({
                 model: "dall-e-3",
-                prompt: preservingPrompt,
+                prompt: pureBlackWhitePrompt,
                 n: 1,
                 size: "1024x1024",
                 quality: "standard"
             }),
         });
 
-        console.log('DALL-E 3 response status:', dalle3Response.status);
-
         if (!dalle3Response.ok) {
             const errorData = await dalle3Response.json();
-            console.error('DALL-E 3 API error:', errorData);
-            throw new Error(`DALL-E 3 API Error: ${dalle3Response.status} - ${errorData.error?.message || 'Unknown error'}`);
+            throw new Error(`API Error: ${dalle3Response.status} - ${errorData.error?.message}`);
         }
 
         const dalle3Result = await dalle3Response.json();
 
         if (dalle3Result.data && dalle3Result.data.length > 0) {
-            updateProgress(100, 'かわいい ぬりえが できました！');
+            updateProgress(100, '完全白黒 ぬりえが できました！');
             generatedImageUrl = dalle3Result.data[0].url;
-            showResult(dalle3Result.data[0].url, 'DALL-E-3-Preserving', `📸 「${imageDescription}」をもとに作成！`);
+            showResult(dalle3Result.data[0].url, 'DALL-E-3-Pure-BW', `🖤 完全白黒の線画です！`);
         } else {
             throw new Error('No image generated');
         }
