@@ -2,12 +2,15 @@
   functions = "netlify/functions"
   publish = "."
 
-# DALL-E 3 Function設定
-[functions."generate-coloring"]
-  timeout = 30
+# 非同期ジョブ処理用Function設定
+[functions."start-dalle-job"]
+  timeout = 10
 
-[functions."test-replicate"]
-  timeout = 30
+[functions."process-dalle-background"]
+  timeout = 900
+
+[functions."check-dalle-job"]
+  timeout = 10
 
 [[headers]]
   for = "/*"
@@ -15,9 +18,3 @@
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type"
-
-# リダイレクト設定
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
