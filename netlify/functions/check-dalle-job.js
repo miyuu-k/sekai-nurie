@@ -1,5 +1,5 @@
 // netlify/functions/check-dalle-job.js
-// ジョブの進行状況を確認
+// シンプル版ジョブ確認
 
 exports.handler = async (event, context) => {
     const headers = {
@@ -10,14 +10,6 @@ exports.handler = async (event, context) => {
   
     if (event.httpMethod === 'OPTIONS') {
       return { statusCode: 200, headers, body: '' };
-    }
-  
-    if (event.httpMethod !== 'GET') {
-      return {
-        statusCode: 405,
-        headers,
-        body: JSON.stringify({ error: 'Method not allowed' }),
-      };
     }
   
     try {
@@ -33,16 +25,24 @@ exports.handler = async (event, context) => {
   
       console.log('Checking job status:', jobId);
   
-      // グローバル関数を使ってジョブ結果を取得
-      let jobResult;
-      if (global.getJobResult) {
-        jobResult = global.getJobResult(jobId);
-      } else {
-        // フォールバック: まだ処理中とする
-        jobResult = { status: 'processing', progress: 50 };
+      // グローバルオブジェクトから結果を取得
+      const jobResult = global.jobResults?.get(jobId);
+  
+      if (!jobResult) {
+        console.log('Job not found:', jobId);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            status: 'processing',
+            progress: 25,
+            message: 'Processing...',
+            jobId: jobId
+          }),
+        };
       }
   
-      console.log('Job result:', jobResult);
+      console.log('Job result found:', jobResult.status);
   
       if (jobResult.status === 'completed') {
         return {
@@ -58,21 +58,11 @@ exports.handler = async (event, context) => {
         };
       } else if (jobResult.status === 'failed') {
         return {
-          statusCode: 400,
+          statusCode: 200, // エラーでも200を返す（フロントエンドで処理）
           headers,
           body: JSON.stringify({
             status: 'failed',
             error: jobResult.error || 'Processing failed',
-            jobId: jobId
-          }),
-        };
-      } else if (jobResult.status === 'not_found') {
-        return {
-          statusCode: 404,
-          headers,
-          body: JSON.stringify({
-            status: 'not_found',
-            error: 'Job not found',
             jobId: jobId
           }),
         };

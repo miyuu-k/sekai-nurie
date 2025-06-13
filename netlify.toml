@@ -2,12 +2,9 @@
   functions = "netlify/functions"
   publish = "."
 
-# 非同期ジョブ処理用Function設定
+# シンプル版非同期処理用Function設定
 [functions."start-dalle-job"]
   timeout = 10
-
-[functions."process-dalle-background"]
-  timeout = 900
 
 [functions."check-dalle-job"]
   timeout = 10
