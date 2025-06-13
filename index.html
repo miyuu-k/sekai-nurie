@@ -532,6 +532,37 @@
                 });
                 console.log('Request body prepared, size:', requestBody.length);
                 
+                // まず同期版を試行（10秒以内）
+                updateProgress(30, 'クイック処理を試行中...');
+                
+                try {
+                    const quickResponse = await fetch('/.netlify/functions/process-dalle2-img2img-sync', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: requestBody
+                    });
+
+                    if (quickResponse.ok) {
+                        const quickResult = await quickResponse.json();
+                        if (quickResult.success) {
+                            console.log('Quick processing successful!');
+                            updateProgress(100, 'ぬりえが できました！');
+                            generatedImageUrl = quickResult.imageUrl;
+                            showResult(quickResult.imageUrl, quickResult.model, 'クイック処理');
+                            return; // 成功したので終了
+                        }
+                    }
+                    
+                    console.log('Quick processing failed, trying background processing...');
+                } catch (quickError) {
+                    console.log('Quick processing error:', quickError.message);
+                }
+
+                // クイック処理が失敗した場合、Background処理を実行
+                updateProgress(40, 'Background処理を開始...');
+
                 // DALL-E 2 img-to-img Background Functionを呼び出し
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分

@@ -90,16 +90,26 @@ exports.handler = async (event, context) => {
         method: 'Image-to-Image conversion'
       };
       
-      console.log('Returning success response');
+      const responseBody = JSON.stringify(responseData);
+      console.log('Response body length:', responseBody.length);
+      console.log('Response body preview:', responseBody.substring(0, 100));
       
-      return {
+      const finalResponse = {
         statusCode: 200,
         headers: {
-          ...headers,
-          'Content-Type': 'application/json'
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Content-Type': 'application/json',
+          'Content-Length': responseBody.length.toString()
         },
-        body: JSON.stringify(responseData)
+        body: responseBody
       };
+      
+      console.log('Final response headers:', finalResponse.headers);
+      console.log('Sending successful response...');
+      
+      return finalResponse;
     } else {
       console.error('DALL-E 2 generation failed:', dalleResult);
       
@@ -108,13 +118,18 @@ exports.handler = async (event, context) => {
         error: dalleResult.error?.message || 'DALL-E 2 image editing failed'
       };
       
+      const errorBody = JSON.stringify(errorData);
+      console.log('Error response body:', errorBody);
+      
       return {
         statusCode: 500,
         headers: {
-          ...headers,
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(errorData)
+        body: errorBody
       };
     }
 
@@ -130,13 +145,18 @@ exports.handler = async (event, context) => {
       details: error.message
     };
     
+    const errorBody = JSON.stringify(errorData);
+    console.log('Catch error response body:', errorBody);
+    
     return {
       statusCode: 500,
       headers: {
-        ...headers,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(errorData),
+      body: errorBody,
     };
   }
 };
