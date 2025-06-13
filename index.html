@@ -488,10 +488,10 @@
             });
         });
 
-   // generateColoring関数をハイブリッド版に変更
+ // generateColoring関数をDALL-E 3版に変更
 
 async function generateColoring() {
-    console.log('=== generateColoring function called (ハイブリッド版) ===');
+    console.log('=== generateColoring function called (DALL-E 3版) ===');
     
     if (!selectedFile) {
         console.error('No file selected');
@@ -512,7 +512,7 @@ async function generateColoring() {
     updateProgress(0, 'しゃしんを あっぷろーどしています...');
 
     try {
-        console.log('Starting hybrid processing...');
+        console.log('Starting DALL-E 3 direct processing...');
         
         // 画像をBase64に変換
         updateProgress(10, 'しゃしんを じゅんびしています...');
@@ -527,22 +527,22 @@ async function generateColoring() {
             throw new Error('画像の変換に失敗しました: ' + base64Error.message);
         }
         
-        updateProgress(20, 'AI が しゃしんを かいせきしています...');
+        updateProgress(30, 'AI が しゃしんを かいせきして...');
+        updateProgress(50, '超かわいい ぬりえを つくっています... ✨🎨');
         
         const requestBody = JSON.stringify({ 
             imageData: imageData
         });
         console.log('Request body prepared, size:', requestBody.length);
         
-        // ハイブリッド処理を開始
-        console.log('Starting hybrid Replicate + DALL-E 3 processing...');
-        updateProgress(30, '高品質 AI でかわいい ぬりえを つくっています... ✨');
+        // DALL-E 3直接処理を開始
+        console.log('Starting DALL-E 3 direct kawaii generation...');
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分でタイムアウト
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒でタイムアウト
 
         try {
-            const response = await fetch('/.netlify/functions/process-hybrid-coloring', {
+            const response = await fetch('/.netlify/functions/process-dalle3-direct', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -553,8 +553,8 @@ async function generateColoring() {
 
             clearTimeout(timeoutId);
             
-            console.log('Hybrid response status:', response.status);
-            console.log('Hybrid response ok:', response.ok);
+            console.log('DALL-E 3 response status:', response.status);
+            console.log('DALL-E 3 response ok:', response.ok);
 
             let result;
             let responseText;
@@ -580,26 +580,28 @@ async function generateColoring() {
             }
 
             if (!response.ok) {
-                throw new Error(`ハイブリッド処理に失敗: HTTP ${response.status}: ${result.error || 'Unknown error'}`);
+                throw new Error(`DALL-E 3処理に失敗: HTTP ${response.status}: ${result.error || 'Unknown error'}`);
             }
             
             updateProgress(100, 'かわいい ぬりえが できました！');
 
             if (result.success && result.imageUrl) {
                 generatedImageUrl = result.imageUrl;
-                showResult(result.imageUrl, result.model, result.method || '');
                 
-                // デバッグ用：中間結果も表示
-                if (result.roughLineArt) {
-                    console.log('中間結果（粗い線画）:', result.roughLineArt);
+                // 検出された被写体も表示
+                let detectionMessage = '';
+                if (result.detectedSubject) {
+                    detectionMessage = `📸 しゃしんから「${result.detectedSubject}」を はっけん！`;
                 }
+                
+                showResult(result.imageUrl, result.model, detectionMessage);
             } else {
-                throw new Error(result.error || 'ハイブリッド画像の生成に失敗しました');
+                throw new Error(result.error || 'DALL-E 3画像の生成に失敗しました');
             }
 
         } catch (fetchError) {
             if (fetchError.name === 'AbortError') {
-                throw new Error('処理に時間がかかりすぎました（3分でタイムアウト）');
+                throw new Error('処理に時間がかかりすぎました（30秒でタイムアウト）');
             } else {
                 throw fetchError;
             }
