@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>せかいぬりえ - Direct API版</title>
+    <title>せかいぬりえ - スマホ対応版</title>
     <style>
         * {
             margin: 0;
@@ -316,6 +316,34 @@
             border: 2px solid #87CEEB;
         }
 
+        /* 画像圧縮設定 */
+        .compression-settings {
+            background: #FFF8DC;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px solid #FFB6C1;
+        }
+
+        .compression-settings h4 {
+            color: #FF69B4;
+            margin-bottom: 10px;
+        }
+
+        .quality-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .file-info {
+            background: #F0F8FF;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #2F4F4F;
+        }
+
         @media (max-width: 600px) {
             .title {
                 font-size: 2rem;
@@ -346,14 +374,14 @@
     <div class="container">
         <div class="header">
             <h1 class="title">🌈 せかいぬりえ 🎨</h1>
-            <p class="subtitle">AI で じぶんだけの オリジナル ぬりえを つくろう！</p>
+            <p class="subtitle">スマホの写真で じぶんだけの オリジナル ぬりえを つくろう！</p>
         </div>
 
         <div class="instructions">
             <h3>🎯 つかいかた</h3>
             <ol>
                 <li>OpenAI APIキーを設定してね</li>
-                <li>すきなものの しゃしんを えらんでね</li>
+                <li>スマホで撮った写真を選んでね（HEIC、JPEG、PNG対応）</li>
                 <li>「ぬりえにする」ボタンを おしてね</li>
                 <li>ちょっと まっててね（30秒くらい）</li>
                 <li>できあがったら プリントして ぬりえを たのしもう！</li>
@@ -396,13 +424,21 @@
 
         <!-- 画像アップロードセクション -->
         <div class="step-container" id="uploadContainer" style="opacity: 0.5; pointer-events: none;">
-            <h2 class="step-title">📸 しゃしんを えらんでね</h2>
+            <h2 class="step-title">📸 スマホの写真を えらんでね</h2>
             
             <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📷</div>
-                <div class="upload-text">ここを タップして しゃしんを えらんでね</div>
-                <div style="font-size: 0.9rem; color: #666;">または しゃしんを ドラッグしてね</div>
-                <input type="file" id="fileInput" class="file-input" accept="image/*">
+                <div class="upload-icon">📱</div>
+                <div class="upload-text">ここを タップして スマホの写真を えらんでね</div>
+                <div style="font-size: 0.9rem; color: #666;">HEIC、JPEG、PNG対応 / 自動サイズ調整</div>
+                <input type="file" id="fileInput" class="file-input" accept="image/*,.heic,.heif">
+            </div>
+
+            <div class="compression-settings" id="compressionSettings" style="display: none;">
+                <h4>📏 画像設定</h4>
+                <label for="qualitySlider">画質調整 (ファイルサイズを小さくします):</label>
+                <input type="range" id="qualitySlider" class="quality-slider" min="30" max="90" value="70">
+                <span id="qualityValue">70%</span>
+                <div class="file-info" id="fileInfo"></div>
             </div>
 
             <div class="error-message" id="errorMessage"></div>
@@ -453,6 +489,7 @@
     <script>
         // グローバル変数
         let selectedFile = null;
+        let processedImageData = null;
         let generatedImageUrl = null;
         let OPENAI_API_KEY = '';
 
@@ -469,6 +506,18 @@
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
         const uploadContainer = document.getElementById('uploadContainer');
+        const compressionSettings = document.getElementById('compressionSettings');
+        const qualitySlider = document.getElementById('qualitySlider');
+        const qualityValue = document.getElementById('qualityValue');
+        const fileInfo = document.getElementById('fileInfo');
+
+        // 画質スライダーの更新
+        qualitySlider.addEventListener('input', function() {
+            qualityValue.textContent = this.value + '%';
+            if (selectedFile) {
+                processImage(selectedFile);
+            }
+        });
 
         // APIキー管理
         function setApiKey() {
@@ -486,15 +535,10 @@
                 return;
             }
             
-            // APIキーを設定
             OPENAI_API_KEY = apiKey;
-            
-            // 入力欄をクリア（セキュリティのため）
             apiKeyInput.value = '';
+            showApiKeyStatus('APIキーが設定されました！ 写真を選択してください 🎉', 'success');
             
-            showApiKeyStatus('APIキーが設定されました！ 画像を選択してください 🎉', 'success');
-            
-            // 画像選択を有効化
             uploadContainer.style.opacity = '1';
             uploadContainer.style.pointerEvents = 'auto';
         }
@@ -548,36 +592,164 @@
         }
 
         function handleFile(file) {
-            // ファイル形式チェック
-            if (!file.type.startsWith('image/')) {
-                showError('しゃしんファイルを えらんでね！');
+            console.log('Selected file:', file.name, file.type, file.size);
+
+            // ファイル形式チェック（HEICも含む）
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+            const validExtensions = ['.heic', '.heif', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
+            
+            const isValidType = validTypes.some(type => file.type.toLowerCase().includes(type.split('/')[1]));
+            const isValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+            
+            if (!isValidType && !isValidExtension) {
+                showError('対応していないファイル形式です。JPEG、PNG、HEIC等の画像ファイルを選択してください。');
                 return;
             }
 
-            // ファイルサイズチェック (10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                showError('しゃしんが おおきすぎるよ！ ちいさい しゃしんを えらんでね');
+            // ファイルサイズチェック (50MB)
+            if (file.size > 50 * 1024 * 1024) {
+                showError('ファイルが大きすぎます（50MB以下にしてください）');
                 return;
             }
 
             selectedFile = file;
             hideError();
-            showSuccess('いいしゃしんが えらばれました！ 🌟');
-            showPreview(file);
-            generateButton.disabled = false;
+            compressionSettings.style.display = 'block';
+            
+            // ファイル情報を表示
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            fileInfo.innerHTML = `
+                📄 ファイル名: ${file.name}<br>
+                📊 元のサイズ: ${fileSizeMB}MB<br>
+                🔄 処理中...
+            `;
+
+            processImage(file);
         }
 
-        function showPreview(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewContainer.innerHTML = `
-                    <img src="${e.target.result}" alt="選択した画像" class="image-preview">
-                    <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
-                        この しゃしんで 超かわいい ぬりえを つくるよ！ 🎨
-                    </p>
-                `;
-            };
-            reader.readAsDataURL(file);
+        // 画像処理（HEIC変換 + リサイズ + 圧縮）
+        async function processImage(file) {
+            try {
+                let processedFile = file;
+                
+                // HEICファイルの場合、JPEGに変換
+                if (file.type === 'image/heic' || file.type === 'image/heif' || 
+                    file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+                    
+                    console.log('Converting HEIC to JPEG...');
+                    fileInfo.innerHTML += '<br>🔄 HEIC → JPEG 変換中...';
+                    
+                    try {
+                        processedFile = await convertHEICToJPEG(file);
+                        console.log('HEIC conversion completed');
+                    } catch (heicError) {
+                        console.error('HEIC conversion failed:', heicError);
+                        showError('HEIC変換に失敗しました。JPEGやPNGファイルをお試しください。');
+                        return;
+                    }
+                }
+
+                // 画像のリサイズと圧縮
+                console.log('Resizing and compressing image...');
+                fileInfo.innerHTML = fileInfo.innerHTML.replace('🔄 処理中...', '🔄 サイズ調整中...');
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    // 最大サイズを設定（長辺を1024pxに制限）
+                    const maxSize = 1024;
+                    let { width, height } = img;
+                    
+                    if (width > height && width > maxSize) {
+                        height = (height * maxSize) / width;
+                        width = maxSize;
+                    } else if (height > maxSize) {
+                        width = (width * maxSize) / height;
+                        height = maxSize;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // 画像を描画
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // 圧縮してBase64に変換
+                    const quality = qualitySlider.value / 100;
+                    processedImageData = canvas.toDataURL('image/jpeg', quality);
+                    
+                    // ファイルサイズを計算
+                    const base64Size = processedImageData.length * 0.75; // Base64は約25%のオーバーヘッド
+                    const compressedSizeMB = (base64Size / (1024 * 1024)).toFixed(2);
+                    
+                    fileInfo.innerHTML = `
+                        📄 ファイル名: ${file.name}<br>
+                        📊 元のサイズ: ${(file.size / (1024 * 1024)).toFixed(2)}MB<br>
+                        📏 リサイズ後: ${width}×${height}px<br>
+                        🗜️ 圧縮後: ${compressedSizeMB}MB<br>
+                        ✅ 処理完了！
+                    `;
+                    
+                    showPreview(processedImageData);
+                    showSuccess('写真の処理が完了しました！ 🌟');
+                    generateButton.disabled = false;
+                };
+                
+                img.onerror = function() {
+                    showError('画像の読み込みに失敗しました');
+                };
+                
+                // ファイルを読み込み
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(processedFile);
+                
+            } catch (error) {
+                console.error('Image processing error:', error);
+                showError('画像の処理に失敗しました: ' + error.message);
+            }
+        }
+
+        // HEIC→JPEG変換（ブラウザサポートに依存）
+        async function convertHEICToJPEG(heicFile) {
+            return new Promise((resolve, reject) => {
+                // ブラウザがHEICをサポートしている場合、通常の処理
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    canvas.toBlob(resolve, 'image/jpeg', 0.9);
+                };
+                
+                img.onerror = function() {
+                    reject(new Error('HEIC conversion not supported in this browser'));
+                };
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(heicFile);
+            });
+        }
+
+        function showPreview(imageData) {
+            previewContainer.innerHTML = `
+                <img src="${imageData}" alt="処理済み画像" class="image-preview">
+                <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
+                    この写真で 超かわいい ぬりえを つくるよ！ 🎨
+                </p>
+            `;
         }
 
         function showError(message) {
@@ -597,172 +769,160 @@
             successMessage.style.display = 'none';
         }
 
-        // メイン処理：ぬりえ生成
+        // メイン処理：ぬりえ生成（汎用版と同じロジック）
         generateButton.addEventListener('click', generateColoring);
 
-       // 原型を保持するDALL-E 3版（generateColoring関数の置き換え用）
-
-// 完全白黒版DALL-E 3（generateColoring関数の置き換え用）
-
-// シンプル線画版DALL-E 3（generateColoring関数の置き換え用）
-
-// 汎用版DALL-E 3（generateColoring関数の置き換え用）
-
-async function generateColoring() {
-    console.log('=== 汎用版 DALL-E 3 ===');
-    
-    if (!checkApiKey()) return;
-    
-    if (!selectedFile) {
-        showError('まず しゃしんを えらんでね！');
-        return;
-    }
-
-    // ローディング表示
-    loadingContainer.style.display = 'block';
-    generateButton.disabled = true;
-    resultContainer.style.display = 'none';
-    hideError();
-    progressContainer.style.display = 'block';
-    updateProgress(0, 'しゃしんを あっぷろーどしています...');
-
-    try {
-        // 画像をBase64に変換
-        updateProgress(10, 'しゃしんを じゅんびしています...');
-        const imageData = await fileToBase64(selectedFile);
-        
-        updateProgress(30, 'AI が しゃしんを かいせきしています...');
-
-        // GPT-4Vで詳細な画像解析（被写体のカテゴリも判定）
-        const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "text",
-                                text: "この画像の主な被写体を詳しく説明してください。カテゴリ（動物/人物/乗り物/食べ物/植物/建物/その他）と具体的な内容を含めて、ぬりえ作成用の説明として50語以内で答えてください。"
-                            },
-                            {
-                                type: "image_url",
-                                image_url: {
-                                    url: imageData
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: 100
-            }),
-        });
-
-        let imageDescription = "a cute subject";
-        let category = "other";
-        
-        if (analysisResponse.ok) {
-            const analysisResult = await analysisResponse.json();
-            if (analysisResult.choices && analysisResult.choices[0]) {
-                imageDescription = analysisResult.choices[0].message.content.trim();
-                console.log('Image description:', imageDescription);
-                
-                // カテゴリを判定
-                const description = imageDescription.toLowerCase();
-                if (description.includes('動物') || description.includes('animal') || description.includes('cat') || description.includes('dog') || description.includes('bird')) {
-                    category = "animal";
-                } else if (description.includes('人物') || description.includes('person') || description.includes('people') || description.includes('child') || description.includes('baby')) {
-                    category = "person";
-                } else if (description.includes('車') || description.includes('電車') || description.includes('car') || description.includes('train') || description.includes('vehicle') || description.includes('乗り物')) {
-                    category = "vehicle";
-                } else if (description.includes('食べ物') || description.includes('food') || description.includes('果物') || description.includes('fruit') || description.includes('ケーキ') || description.includes('cake')) {
-                    category = "food";
-                } else if (description.includes('花') || description.includes('植物') || description.includes('flower') || description.includes('plant') || description.includes('tree')) {
-                    category = "plant";
-                } else if (description.includes('建物') || description.includes('家') || description.includes('building') || description.includes('house')) {
-                    category = "building";
-                }
-                
-                console.log('Detected category:', category);
+        async function generateColoring() {
+            console.log('=== スマホ対応汎用版 DALL-E 3 ===');
+            
+            if (!checkApiKey()) return;
+            
+            if (!processedImageData) {
+                showError('まず 写真を選択してください！');
+                return;
             }
-        }
 
-        updateProgress(50, 'かわいい ぬりえを つくっています... ✨');
+            // ローディング表示
+            loadingContainer.style.display = 'block';
+            generateButton.disabled = true;
+            resultContainer.style.display = 'none';
+            hideError();
+            progressContainer.style.display = 'block';
+            updateProgress(0, 'しゃしんを あっぷろーどしています...');
 
-        // カテゴリ別の最適化されたプロンプト生成
-        const categoryPrompts = {
-            animal: `${imageDescription}, simple animal coloring book page.
-            
-            Style for animals:
-            - Kawaii cute style with big round eyes
-            - Simple body shapes with smooth outlines
-            - NO fur texture details, NO hair lines
-            - Basic shapes: circles, ovals, triangles
-            - Friendly expression with simple curved smile`,
-            
-            person: `${imageDescription}, simple character coloring book page.
-            
-            Style for people:
-            - Chibi kawaii style with oversized head
-            - Simple facial features: big round eyes, small nose, smile
-            - Basic clothing without detailed patterns
-            - Smooth outlines for hair (no individual strands)
-            - Friendly, cartoon-like appearance`,
-            
-            vehicle: `${imageDescription}, simple vehicle coloring book page.
-            
-            Style for vehicles:
-            - Clean geometric shapes with rounded corners
-            - Simple wheel circles and basic body outline
-            - NO detailed mechanical parts
-            - Kawaii style with cute face if appropriate
-            - Bold, clear sections perfect for coloring`,
-            
-            food: `${imageDescription}, simple food coloring book page.
-            
-            Style for food:
-            - Kawaii cute style with happy face if appropriate
-            - Simple geometric food shapes
-            - Clear ingredient sections
-            - NO detailed textures or small garnishes
-            - Fun, appetizing cartoon appearance`,
-            
-            plant: `${imageDescription}, simple nature coloring book page.
-            
-            Style for plants:
-            - Simple leaf and petal shapes
-            - Clear flower outlines with basic centers
-            - NO detailed vein lines or textures
-            - Kawaii style with cute faces if flowers
-            - Easy-to-color sections`,
-            
-            building: `${imageDescription}, simple building coloring book page.
-            
-            Style for buildings:
-            - Basic geometric shapes: rectangles, triangles
-            - Simple window and door outlines
-            - NO architectural details or textures
-            - Kawaii style with cute features if appropriate
-            - Clear, bold sections`,
-            
-            other: `${imageDescription}, simple coloring book page.
-            
-            General style:
-            - Clean, simple outlines
-            - Basic geometric shapes
-            - NO complex details or textures
-            - Kawaii cute style where appropriate
-            - Easy sections for coloring`
-        };
+            try {
+                updateProgress(30, 'AI が しゃしんを かいせきしています...');
 
-        const basePrompt = categoryPrompts[category] || categoryPrompts.other;
+                // GPT-4Vで詳細な画像解析（被写体のカテゴリも判定）
+                const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "この画像の主な被写体を詳しく説明してください。カテゴリ（動物/人物/乗り物/食べ物/植物/建物/その他）と具体的な内容を含めて、ぬりえ作成用の説明として50語以内で答えてください。"
+                                    },
+                                    {
+                                        type: "image_url",
+                                        image_url: {
+                                            url: processedImageData
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 100
+                    }),
+                });
 
-        const universalPrompt = `${basePrompt}
+                let imageDescription = "a cute subject";
+                let category = "other";
+                
+                if (analysisResponse.ok) {
+                    const analysisResult = await analysisResponse.json();
+                    if (analysisResult.choices && analysisResult.choices[0]) {
+                        imageDescription = analysisResult.choices[0].message.content.trim();
+                        console.log('Image description:', imageDescription);
+                        
+                        // カテゴリを判定
+                        const description = imageDescription.toLowerCase();
+                        if (description.includes('動物') || description.includes('animal') || description.includes('cat') || description.includes('dog') || description.includes('bird')) {
+                            category = "animal";
+                        } else if (description.includes('人物') || description.includes('person') || description.includes('people') || description.includes('child') || description.includes('baby')) {
+                            category = "person";
+                        } else if (description.includes('車') || description.includes('電車') || description.includes('car') || description.includes('train') || description.includes('vehicle') || description.includes('乗り物')) {
+                            category = "vehicle";
+                        } else if (description.includes('食べ物') || description.includes('food') || description.includes('果物') || description.includes('fruit') || description.includes('ケーキ') || description.includes('cake')) {
+                            category = "food";
+                        } else if (description.includes('花') || description.includes('植物') || description.includes('flower') || description.includes('plant') || description.includes('tree')) {
+                            category = "plant";
+                        } else if (description.includes('建物') || description.includes('家') || description.includes('building') || description.includes('house')) {
+                            category = "building";
+                        }
+                        
+                        console.log('Detected category:', category);
+                    }
+                }
+
+                updateProgress(50, 'かわいい ぬりえを つくっています... ✨');
+
+                // カテゴリ別の最適化されたプロンプト生成
+                const categoryPrompts = {
+                    animal: `${imageDescription}, simple animal coloring book page.
+                    
+                    Style for animals:
+                    - Kawaii cute style with big round eyes
+                    - Simple body shapes with smooth outlines
+                    - NO fur texture details, NO hair lines
+                    - Basic shapes: circles, ovals, triangles
+                    - Friendly expression with simple curved smile`,
+                    
+                    person: `${imageDescription}, simple character coloring book page.
+                    
+                    Style for people:
+                    - Chibi kawaii style with oversized head
+                    - Simple facial features: big round eyes, small nose, smile
+                    - Basic clothing without detailed patterns
+                    - Smooth outlines for hair (no individual strands)
+                    - Friendly, cartoon-like appearance`,
+                    
+                    vehicle: `${imageDescription}, simple vehicle coloring book page.
+                    
+                    Style for vehicles:
+                    - Clean geometric shapes with rounded corners
+                    - Simple wheel circles and basic body outline
+                    - NO detailed mechanical parts
+                    - Kawaii style with cute face if appropriate
+                    - Bold, clear sections perfect for coloring`,
+                    
+                    food: `${imageDescription}, simple food coloring book page.
+                    
+                    Style for food:
+                    - Kawaii cute style with happy face if appropriate
+                    - Simple geometric food shapes
+                    - Clear ingredient sections
+                    - NO detailed textures or small garnishes
+                    - Fun, appetizing cartoon appearance`,
+                    
+                    plant: `${imageDescription}, simple nature coloring book page.
+                    
+                    Style for plants:
+                    - Simple leaf and petal shapes
+                    - Clear flower outlines with basic centers
+                    - NO detailed vein lines or textures
+                    - Kawaii style with cute faces if flowers
+                    - Easy-to-color sections`,
+                    
+                    building: `${imageDescription}, simple building coloring book page.
+                    
+                    Style for buildings:
+                    - Basic geometric shapes: rectangles, triangles
+                    - Simple window and door outlines
+                    - NO architectural details or textures
+                    - Kawaii style with cute features if appropriate
+                    - Clear, bold sections`,
+                    
+                    other: `${imageDescription}, simple coloring book page.
+                    
+                    General style:
+                    - Clean, simple outlines
+                    - Basic geometric shapes
+                    - NO complex details or textures
+                    - Kawaii cute style where appropriate
+                    - Easy sections for coloring`
+                };
+
+                const basePrompt = categoryPrompts[category] || categoryPrompts.other;
+
+                const universalPrompt = `${basePrompt}
 
 UNIVERSAL REQUIREMENTS FOR ALL SUBJECTS:
 🖤 ONLY pure black (#000000) outlines on pure white (#FFFFFF) background
@@ -783,77 +943,78 @@ FORBIDDEN FOR ALL:
 
 GOAL: Create the simplest, clearest version that any 3-6 year old can easily color without confusion.`;
 
-        console.log('Generating universal coloring page...');
+                console.log('Generating mobile-optimized coloring page...');
 
-        const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "dall-e-3",
-                prompt: universalPrompt,
-                n: 1,
-                size: "1024x1024",
-                quality: "standard"
-            }),
-        });
+                const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "dall-e-3",
+                        prompt: universalPrompt,
+                        n: 1,
+                        size: "1024x1024",
+                        quality: "standard"
+                    }),
+                });
 
-        if (!dalle3Response.ok) {
-            const errorData = await dalle3Response.json();
-            throw new Error(`API Error: ${dalle3Response.status} - ${errorData.error?.message}`);
+                if (!dalle3Response.ok) {
+                    const errorData = await dalle3Response.json();
+                    throw new Error(`API Error: ${dalle3Response.status} - ${errorData.error?.message}`);
+                }
+
+                const dalle3Result = await dalle3Response.json();
+
+                if (dalle3Result.data && dalle3Result.data.length > 0) {
+                    updateProgress(100, 'かわいい ぬりえが できました！');
+                    generatedImageUrl = dalle3Result.data[0].url;
+                    
+                    // カテゴリに応じた日本語メッセージ
+                    const categoryMessages = {
+                        animal: '🐾 どうぶつの ぬりえです！',
+                        person: '👤 ひとの ぬりえです！', 
+                        vehicle: '🚗 のりものの ぬりえです！',
+                        food: '🍎 たべものの ぬりえです！',
+                        plant: '🌸 しょくぶつの ぬりえです！',
+                        building: '🏠 たてものの ぬりえです！',
+                        other: '✨ オリジナル ぬりえです！'
+                    };
+                    
+                    const message = categoryMessages[category] || categoryMessages.other;
+                    
+                    showResult(dalle3Result.data[0].url, 'DALL-E-3-Mobile', message);
+                } else {
+                    throw new Error('No image generated');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                
+                // エラーメッセージを詳細化
+                let errorMessage = error.message;
+                if (error.message.includes('401')) {
+                    errorMessage = 'OpenAI APIキーが正しく設定されていません 🔑\nAPIキーを確認してください';
+                } else if (error.message.includes('429')) {
+                    errorMessage = 'API使用量の上限に達しました ⏰\nしばらく待ってから再試行してください';
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorMessage = 'ネットワーク接続に問題があります 🌐\nインターネット接続を確認してください';
+                }
+                
+                showError(`エラーが発生しました 😢\n\n${errorMessage}\n\nもういちど ためしてね！`);
+            } finally {
+                loadingContainer.style.display = 'none';
+                generateButton.disabled = false;
+                progressContainer.style.display = 'none';
+            }
         }
-
-        const dalle3Result = await dalle3Response.json();
-
-        if (dalle3Result.data && dalle3Result.data.length > 0) {
-            updateProgress(100, 'かわいい ぬりえが できました！');
-            generatedImageUrl = dalle3Result.data[0].url;
-            
-            // カテゴリに応じた日本語メッセージ
-            const categoryMessages = {
-                animal: '🐾 どうぶつの ぬりえです！',
-                person: '👤 ひとの ぬりえです！', 
-                vehicle: '🚗 のりものの ぬりえです！',
-                food: '🍎 たべものの ぬりえです！',
-                plant: '🌸 しょくぶつの ぬりえです！',
-                building: '🏠 たてものの ぬりえです！',
-                other: '✨ オリジナル ぬりえです！'
-            };
-            
-            const message = categoryMessages[category] || categoryMessages.other;
-            
-            showResult(dalle3Result.data[0].url, 'DALL-E-3-Universal', message);
-        } else {
-            throw new Error('No image generated');
-        }
-
-    } catch (error) {
-        console.error('Error:', error);
-        showError(`エラーが発生しました: ${error.message}`);
-    } finally {
-        loadingContainer.style.display = 'none';
-        generateButton.disabled = false;
-        progressContainer.style.display = 'none';
-    }
-}
 
         // プログレスバー更新
         function updateProgress(percent, message) {
             progressBar.style.width = percent + '%';
             progressBar.textContent = percent + '%';
             statusText.textContent = message;
-        }
-
-        // ファイルをBase64に変換
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
         }
 
         function showResult(imageUrl, model, detectedObject) {
@@ -868,7 +1029,7 @@ GOAL: Create the simplest, clearest version that any 3-6 year old can easily col
                     ${detectionMessage}
                     <img src="${imageUrl}" alt="生成されたぬりえ" style="max-width: 100%; max-height: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #FFB6C1;">
                     <p style="color: #8B4513; font-size: 1rem; margin-top: 10px;">
-                        じぶんだけの オリジナル ぬりえだよ！ 🌈<br>
+                        スマホ写真から作った オリジナル ぬりえだよ！ 🌈<br>
                         <small>(${model}で せいせい)</small>
                     </p>
                 </div>
@@ -947,20 +1108,25 @@ GOAL: Create the simplest, clearest version that any 3-6 year old can easily col
 
         function resetApp() {
             selectedFile = null;
+            processedImageData = null;
             generatedImageUrl = null;
             fileInput.value = '';
             previewContainer.innerHTML = '';
             resultContainer.style.display = 'none';
             loadingContainer.style.display = 'none';
+            compressionSettings.style.display = 'none';
             generateButton.disabled = true;
             hideError();
+            
+            // ファイル情報をリセット
+            fileInfo.innerHTML = '';
             
             // トップにスクロール
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // 初期化
-        console.log('Frontend Direct API version initialized');
+        console.log('Mobile-optimized version initialized');
     </script>
 </body>
 </html>
