@@ -639,76 +639,12 @@
                     throw new Error('画像の変換に失敗しました: ' + base64Error.message);
                 }
                 
-                updateProgress(30, 'AI が しゃしんを かいせきしています...');
+                updateProgress(30, 'かわいい ぬりえを つくっています... ✨');
 
-                // Step 1: GPT-4V で画像解析
-                console.log('Analyzing image with GPT-4V...');
-                
-                let subject = "かわいいキャラクター";
-                try {
-                    const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            model: "gpt-4o",
-                            messages: [
-                                {
-                                    role: "user",
-                                    content: [
-                                        {
-                                            type: "text",
-                                            text: "この画像の主な被写体を1-2語で簡潔に教えてください（例：猫、犬、花、車、人など）"
-                                        },
-                                        {
-                                            type: "image_url",
-                                            image_url: {
-                                                url: imageData
-                                            }
-                                        }
-                                    ]
-                                }
-                            ],
-                            max_tokens: 50
-                        }),
-                    });
-
-                    if (analysisResponse.ok) {
-                        const analysisResult = await analysisResponse.json();
-                        if (analysisResult.choices && analysisResult.choices[0]) {
-                            subject = analysisResult.choices[0].message.content.trim();
-                            console.log('Detected subject:', subject);
-                        }
-                    } else {
-                        console.log('Image analysis failed, using default subject');
-                    }
-                } catch (analysisError) {
-                    console.log('Image analysis failed, using default subject:', analysisError);
-                }
-
-                updateProgress(50, 'かわいい ぬりえを つくっています... ✨');
-
-                // Step 2: DALL-E 3で超可愛い線画生成
+                // シンプルなプロンプトで直接生成（画像解析をスキップして確実性を優先）
                 console.log('Generating kawaii coloring page with DALL-E 3...');
 
-                const kawaiPrompt = `Create an extremely cute kawaii-style coloring book page featuring "${subject}" for children ages 3-6.
-
-🎨 ESSENTIAL STYLE REQUIREMENTS:
-- Ultra-thick black outlines (6-7px thick) perfect for small hands and chunky crayons
-- Pure white background with absolutely no textures, patterns, or shading
-- SUPER kawaii chibi style with ENORMOUS round eyes (eyes = 1/3 of head size)
-- Tiny dot nose and small curved smile
-- Extreme chibi proportions: head 3x larger than body
-- All shapes puffy and rounded like soft marshmallows or pillows
-- Remove ALL internal details, patterns, textures, and small elements
-- Simplify everything to basic geometric shapes (circles, ovals, rounded rectangles)
-- Maximum Japanese kawaii cuteness (Hello Kitty / Pikachu / Pusheen level)
-- Perfect for ages 3-6 with thick crayons or markers
-- ONLY black outlines on pure white background - NO colors, shading, or gradients
-
-Think: if a 3-year-old drew this with the cutest possible style, what would it look like?`;
+                const kawaiPrompt = `Create a cute kawaii-style coloring book page for children ages 3-6. Style: thick black outlines only, white background, big round eyes, chibi proportions, simple shapes, perfect for coloring with crayons. No colors, no shading, just black lines on white background.`;
 
                 const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
                     method: 'POST',
@@ -721,8 +657,7 @@ Think: if a 3-year-old drew this with the cutest possible style, what would it l
                         prompt: kawaiPrompt,
                         n: 1,
                         size: "1024x1024",
-                        quality: "hd",
-                        style: "natural"
+                        quality: "standard"
                     }),
                 });
 
@@ -755,19 +690,8 @@ Think: if a 3-year-old drew this with the cutest possible style, what would it l
                     console.log('DALL-E 3 kawaii generation successful!');
                     generatedImageUrl = dalle3Result.data[0].url;
                     
-                    // 結果表示（検出された被写体情報も含める）
-                    let detectionMessage = '';
-                    if (subject !== "かわいいキャラクター") {
-                        const objectNames = {
-                            'cat': 'ねこ', 'dog': 'いぬ', 'rabbit': 'うさぎ', 'bird': 'とり', 
-                            'flower': 'おはな', 'car': 'くるま', 'ball': 'ボール', 'bear': 'くま',
-                            'mouse': 'ねずみ', 'fish': 'さかな', 'tree': 'き', 'sun': 'おひさま'
-                        };
-                        const japaneseName = objectNames[subject.toLowerCase()] || subject;
-                        detectionMessage = `📸 しゃしんから「${japaneseName}」を はっけん！`;
-                    }
-                    
-                    showResult(dalle3Result.data[0].url, 'DALL-E-3-Direct-API', detectionMessage);
+                    // 結果表示
+                    showResult(dalle3Result.data[0].url, 'DALL-E-3-Direct-API', '🎨 AI が つくった かわいい ぬりえです！');
                 } else {
                     throw new Error('DALL-E 3 generation returned no results');
                 }
