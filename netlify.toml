@@ -2,8 +2,8 @@
   functions = "netlify/functions"
   publish = "."
 
-# Background Function設定（15分タイムアウト）
-[functions."process-dalle-unified-background"]
+# DALL-E 2 img-to-img Background Function設定
+[functions."process-dalle2-img2img-background"]
   timeout = 900
 
 # 通常Function設定（10秒タイムアウト）

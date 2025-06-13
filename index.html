@@ -532,22 +532,30 @@
                 });
                 console.log('Request body prepared, size:', requestBody.length);
                 
-                // Background Functionを呼び出し（15分まで待機可能）
-                const response = await fetch('/.netlify/functions/process-dalle-unified-background', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: requestBody
-                });
-                
-                console.log('Background response status:', response.status);
-                console.log('Background response ok:', response.ok);
+                // DALL-E 2 img-to-img Background Functionを呼び出し
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分
+
+                try {
+                    const response = await fetch('/.netlify/functions/process-dalle2-img2img-background', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: requestBody,
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+                    
+                    console.log('Background response status:', response.status);
+                    console.log('Background response ok:', response.ok);
 
                 let result;
+                let responseText;
                 try {
                     // レスポンステキストを取得
-                    const responseText = await response.text();
+                    responseText = await response.text();
                     console.log('Raw response text:', responseText);
                     console.log('Response text length:', responseText.length);
                     
@@ -561,8 +569,8 @@
                     
                 } catch (parseError) {
                     console.error('JSON parse error:', parseError);
-                    console.error('Response text was:', responseText);
-                    throw new Error('サーバーからの応答形式が正しくありません');
+                    console.error('Response text was:', responseText || 'undefined');
+                    throw new Error(`サーバーからの応答形式が正しくありません: ${parseError.message}`);
                 }
 
                 if (!response.ok) {
@@ -571,11 +579,19 @@
                 
                 updateProgress(100, 'ぬりえが できました！');
 
-                if (result.success && result.imageUrl) {
-                    generatedImageUrl = result.imageUrl;
-                    showResult(result.imageUrl, result.model, result.detectedObject);
-                } else {
-                    throw new Error(result.error || '画像の生成に失敗しました');
+                    if (result.success && result.imageUrl) {
+                        generatedImageUrl = result.imageUrl;
+                        showResult(result.imageUrl, result.model, result.detectedObject);
+                    } else {
+                        throw new Error(result.error || '画像の生成に失敗しました');
+                    }
+
+                } catch (fetchError) {
+                    if (fetchError.name === 'AbortError') {
+                        throw new Error('処理に時間がかかりすぎました（3分でタイムアウト）');
+                    } else {
+                        throw fetchError;
+                    }
                 }
                 
             } catch (error) {
