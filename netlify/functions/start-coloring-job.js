@@ -34,9 +34,9 @@ exports.handler = async (event, context) => {
 
     console.log('Starting Replicate prediction...');
 
-    // より具体的で元画像を重視するプロンプト
-    const prompt = "convert this image to clean black and white line art coloring book page, preserve the main subject and shapes from the original image, thick black outlines, simple clean lines, suitable for children coloring, maintain the composition and key features";
-    const negativePrompt = "nsfw, adult content, inappropriate, sexual, violence, scary, realistic shading, complex details, photographic, blurry, noisy, colors, filled areas";
+    // デフォルメされた可愛い子ども向け線画用プロンプト
+    const prompt = "convert this image to cute kawaii style coloring book page, simple cartoon character design, big round eyes, simplified shapes, thick black outlines only, chibi style, deformed cute proportions, suitable for children ages 3-6, no details inside shapes, clean simple lines, kawaii anime style";
+    const negativePrompt = "realistic, detailed, complex, photographic, shading, gradients, intricate patterns, fine details, adult content, scary, dark, nsfw, filled areas, colors, realistic proportions";
 
     // より元画像に忠実なControlNetモデル（Canny Edge Detection特化）
     const modelVersions = [
@@ -68,9 +68,9 @@ exports.handler = async (event, context) => {
               prompt: prompt,
               negative_prompt: negativePrompt,
               num_outputs: 1,
-              num_inference_steps: 20, // 品質向上のため少し増加
-              guidance_scale: 7.0, // 元画像との関連性を高める
-              controlnet_conditioning_scale: 1.2, // 元画像の影響を強化
+              num_inference_steps: 25, // 品質向上
+              guidance_scale: 8.0, // プロンプト遵守度を上げる（デフォルメ効果強化）
+              controlnet_conditioning_scale: 0.9, // 元画像を参考にしつつデフォルメを許可
               scheduler: "DPMSolverMultistep",
               seed: Math.floor(Math.random() * 1000000)
             }
