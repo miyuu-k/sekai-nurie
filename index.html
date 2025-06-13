@@ -604,8 +604,10 @@
 
 // 完全白黒版DALL-E 3（generateColoring関数の置き換え用）
 
+// シンプル線画版DALL-E 3（generateColoring関数の置き換え用）
+
 async function generateColoring() {
-    console.log('=== 完全白黒版 DALL-E 3 ===');
+    console.log('=== シンプル線画版 DALL-E 3 ===');
     
     if (!checkApiKey()) return;
     
@@ -644,7 +646,7 @@ async function generateColoring() {
                         content: [
                             {
                                 type: "text",
-                                text: "この画像の動物の種類、ポーズ、表情を簡潔に説明してください。「A [動物] [ポーズ] with [表情]」の形式で答えてください。"
+                                text: "この画像の動物の種類とポーズを簡潔に説明してください。「A [動物] [ポーズ]」の形式で答えてください。"
                             },
                             {
                                 type: "image_url",
@@ -655,11 +657,11 @@ async function generateColoring() {
                         ]
                     }
                 ],
-                max_tokens: 50
+                max_tokens: 30
             }),
         });
 
-        let basePrompt = "A cute cat looking up with curious expression";
+        let basePrompt = "A cute cat looking up";
         if (analysisResponse.ok) {
             const analysisResult = await analysisResponse.json();
             if (analysisResult.choices && analysisResult.choices[0]) {
@@ -668,26 +670,35 @@ async function generateColoring() {
             }
         }
 
-        updateProgress(50, '完全白黒の ぬりえを つくっています... ✨');
+        updateProgress(50, 'シンプルな ぬりえを つくっています... ✨');
 
-        // 完全白黒を強制するプロンプト
-        const pureBlackWhitePrompt = `${basePrompt}, line art coloring book page.
+        // シンプル線画を強制するプロンプト
+        const simpleLinePrompt = `${basePrompt}, simple line art coloring book page for toddlers.
 
-CRITICAL REQUIREMENTS - MUST BE FOLLOWED:
-🖤 ONLY pure black (#000000) lines on pure white (#FFFFFF) background
-🚫 ABSOLUTELY NO colors, NO gray, NO brown, NO patterns, NO shading, NO fills
-⚫ Think like a black ink pen drawing on white paper - nothing else exists
-📖 Classic coloring book style - thick black outlines (4-5px) with empty white spaces inside
-👶 Perfect for children ages 3-6 to color with crayons
-🎨 Kawaii cute style but maintain the original pose and features
-👁️ Big round eyes but keep the same facial expression
-🐾 Simplify details but preserve the main characteristics
+CRITICAL SIMPLICITY REQUIREMENTS:
+🖤 ONLY pure black (#000000) outlines on pure white (#FFFFFF) background
+📏 Thick black outlines (5-6px) - easy for small hands to follow
+🚫 NO detailed fur lines, NO hair texture lines, NO intricate patterns
+⭕ Use SMOOTH, SIMPLE outlines for the body shape
+👁️ Big round kawaii eyes with simple circles - no detailed eyelashes
+👂 Simple triangular or rounded ears - no inner ear details
+😊 Simple curved mouth - just one line
+🐾 NO individual fur strands - just clean body outline
+🎨 Think "Hello Kitty" level of simplicity
+👶 Perfect for ages 3-6 - they should be able to color it easily
+📖 Classic simple coloring book style
 
-FORBIDDEN: Any color other than pure black and pure white. No gray tones, no brown, no patterns, no shading, no gradients.
+FORBIDDEN: 
+- Detailed fur textures
+- Hair strand lines
+- Complex patterns
+- Small intricate details
+- Multiple overlapping lines
+- Any colors other than black and white
 
-RESULT: A clean black and white line drawing ready for coloring.`;
+GOAL: Create the SIMPLEST possible version - like a cartoon outline that a 3-year-old can easily color without getting confused.`;
 
-        console.log('Generating pure black and white coloring page...');
+        console.log('Generating simple line art coloring page...');
 
         const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
             method: 'POST',
@@ -697,7 +708,7 @@ RESULT: A clean black and white line drawing ready for coloring.`;
             },
             body: JSON.stringify({
                 model: "dall-e-3",
-                prompt: pureBlackWhitePrompt,
+                prompt: simpleLinePrompt,
                 n: 1,
                 size: "1024x1024",
                 quality: "standard"
@@ -712,9 +723,9 @@ RESULT: A clean black and white line drawing ready for coloring.`;
         const dalle3Result = await dalle3Response.json();
 
         if (dalle3Result.data && dalle3Result.data.length > 0) {
-            updateProgress(100, '完全白黒 ぬりえが できました！');
+            updateProgress(100, 'シンプル ぬりえが できました！');
             generatedImageUrl = dalle3Result.data[0].url;
-            showResult(dalle3Result.data[0].url, 'DALL-E-3-Pure-BW', `🖤 完全白黒の線画です！`);
+            showResult(dalle3Result.data[0].url, 'DALL-E-3-Simple', `🖤 シンプルで塗りやすい線画です！`);
         } else {
             throw new Error('No image generated');
         }
