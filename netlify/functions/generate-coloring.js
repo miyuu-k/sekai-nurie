@@ -1,5 +1,5 @@
 // netlify/functions/generate-coloring.js
-// 最初はシンプルなテスト版
+// POST処理テスト版
 
 exports.handler = async (event, context) => {
     const headers = {
@@ -12,16 +12,45 @@ exports.handler = async (event, context) => {
       return { statusCode: 200, headers, body: '' };
     }
   
+    if (event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        headers,
+        body: JSON.stringify({ error: 'Method not allowed. Use POST.' }),
+      };
+    }
+  
     try {
-      console.log('Function called successfully!');
-      
+      console.log('POST request received');
+      console.log('Event body:', event.body);
+  
+      // POSTデータの解析テスト
+      let requestData = {};
+      if (event.body) {
+        try {
+          requestData = JSON.parse(event.body);
+          console.log('Parsed request data:', Object.keys(requestData));
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ error: 'Invalid JSON in request body' }),
+          };
+        }
+      }
+  
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
           success: true,
-          message: 'Function is working!',
-          method: event.httpMethod
+          message: 'POST processing works!',
+          receivedData: {
+            hasImageData: !!requestData.imageData,
+            imageDataLength: requestData.imageData ? requestData.imageData.length : 0,
+            bodyLength: event.body ? event.body.length : 0
+          }
         }),
       };
   
