@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>せかいぬりえ</title>
+    <title>せかいぬりえ - Direct API版</title>
     <style>
         * {
             margin: 0;
@@ -255,6 +255,67 @@
             margin-top: 10px;
         }
 
+        /* APIキー設定用スタイル */
+        .api-key-input {
+            width: 70%;
+            padding: 12px;
+            border: 3px solid #FFB6C1;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-right: 10px;
+            font-family: monospace;
+        }
+
+        .api-key-button {
+            background: linear-gradient(45deg, #32CD32, #98FB98);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+        }
+
+        .api-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+            font-weight: bold;
+        }
+
+        .api-status.success {
+            background: #E6FFE6;
+            color: #006400;
+            border: 2px solid #90EE90;
+        }
+
+        .api-status.error {
+            background: #FFE4E6;
+            color: #D8000C;
+            border: 2px solid #FFB6C1;
+        }
+
+        .api-help {
+            margin-top: 15px;
+        }
+
+        .api-help summary {
+            color: #FF69B4;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 5px;
+        }
+
+        .api-help-content {
+            margin-top: 10px;
+            padding: 15px;
+            background: #F0F8FF;
+            border-radius: 10px;
+            border: 2px solid #87CEEB;
+        }
+
         @media (max-width: 600px) {
             .title {
                 font-size: 2rem;
@@ -272,6 +333,12 @@
                 margin-left: 0;
                 margin-top: 10px;
             }
+
+            .api-key-input {
+                width: 100%;
+                margin-bottom: 10px;
+                margin-right: 0;
+            }
         }
     </style>
 </head>
@@ -279,20 +346,56 @@
     <div class="container">
         <div class="header">
             <h1 class="title">🌈 せかいぬりえ 🎨</h1>
-            <p class="subtitle">じぶんだけの オリジナル ぬりえを つくろう！</p>
+            <p class="subtitle">AI で じぶんだけの オリジナル ぬりえを つくろう！</p>
         </div>
 
         <div class="instructions">
             <h3>🎯 つかいかた</h3>
             <ol>
+                <li>OpenAI APIキーを設定してね</li>
                 <li>すきなものの しゃしんを えらんでね</li>
                 <li>「ぬりえにする」ボタンを おしてね</li>
-                <li>ちょっと まっててね（1-2分くらい）</li>
+                <li>ちょっと まっててね（30秒くらい）</li>
                 <li>できあがったら プリントして ぬりえを たのしもう！</li>
             </ol>
         </div>
 
-        <div class="step-container">
+        <!-- APIキー設定セクション -->
+        <div class="step-container" id="apiKeyContainer">
+            <h2 class="step-title">🔑 OpenAI APIキー設定</h2>
+            <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
+                より高品質で超かわいい線画を生成するために、OpenAI APIキーを設定してください。<br>
+                <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
+            </p>
+            
+            <div style="margin-bottom: 20px;">
+                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="sk-proj-...">
+                <button onclick="setApiKey()" class="api-key-button">🔧 設定</button>
+            </div>
+            
+            <div id="apiKeyStatus" class="api-status"></div>
+            
+            <details class="api-help">
+                <summary>📖 APIキーの取得方法</summary>
+                <div class="api-help-content">
+                    <ol style="color: #2F4F4F; line-height: 1.8;">
+                        <li><a href="https://platform.openai.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">OpenAI Platform</a> にアクセス</li>
+                        <li>アカウントを作成・ログイン</li>
+                        <li>左メニューの「API Keys」をクリック</li>
+                        <li>「Create new secret key」をクリック</li>
+                        <li>生成されたキー（sk-proj-で始まる）をコピー</li>
+                        <li>上記の入力欄に貼り付けて「設定」をクリック</li>
+                    </ol>
+                    <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
+                        ⚠️ <strong>重要:</strong> APIキーは大切に管理してください。他人と共有しないでください。<br>
+                        💰 DALL-E 3の利用料金: 1回あたり約3-8円程度
+                    </p>
+                </div>
+            </details>
+        </div>
+
+        <!-- 画像アップロードセクション -->
+        <div class="step-container" id="uploadContainer" style="opacity: 0.5; pointer-events: none;">
             <h2 class="step-title">📸 しゃしんを えらんでね</h2>
             
             <div class="upload-area" id="uploadArea">
@@ -311,18 +414,15 @@
 
             <div style="text-align: center; margin-top: 20px;">
                 <button class="button" id="generateButton" disabled>
-                    🎨 ぬりえにする！
-                </button>
-                <br>
-                <button class="button" id="testButton" style="margin-top: 10px; background: linear-gradient(45deg, #FFA500, #FFD700);" onclick="testFunction()">
-                    🔧 テスト実行
+                    🎨 かわいい ぬりえにする！
                 </button>
             </div>
         </div>
 
+        <!-- ローディング表示 -->
         <div class="loading" id="loadingContainer">
             <div class="spinner"></div>
-            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">ぬりえを つくっているよ... ✨</p>
+            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">AI が 超かわいい ぬりえを つくっているよ... ✨</p>
             <div class="status-text" id="statusText">しゃしんを かいせきしています...</div>
             
             <div class="progress-container" id="progressContainer">
@@ -330,6 +430,7 @@
             </div>
         </div>
 
+        <!-- 結果表示 -->
         <div class="step-container result-container" id="resultContainer">
             <h2 class="step-title">🎉 できあがり！</h2>
             <div id="resultImage">
@@ -350,25 +451,12 @@
     </div>
 
     <script>
-        // グローバルエラーハンドラー
-        window.addEventListener('error', function(e) {
-            console.error('=== GLOBAL ERROR ===');
-            console.error('Error:', e.error);
-            console.error('Message:', e.message);
-            console.error('Filename:', e.filename);
-            console.error('Line:', e.lineno);
-        });
-
-        window.addEventListener('unhandledrejection', function(e) {
-            console.error('=== UNHANDLED PROMISE REJECTION ===');
-            console.error('Reason:', e.reason);
-        });
-
+        // グローバル変数
         let selectedFile = null;
         let generatedImageUrl = null;
+        let OPENAI_API_KEY = '';
 
         // DOM要素の取得
-        console.log('Getting DOM elements...');
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const previewContainer = document.getElementById('previewContainer');
@@ -380,13 +468,51 @@
         const statusText = document.getElementById('statusText');
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
+        const uploadContainer = document.getElementById('uploadContainer');
 
-        // 要素の存在確認
-        console.log('DOM elements found:');
-        console.log('uploadArea:', !!uploadArea);
-        console.log('fileInput:', !!fileInput);
-        console.log('generateButton:', !!generateButton);
-        console.log('generateButton disabled:', generateButton?.disabled);
+        // APIキー管理
+        function setApiKey() {
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const apiKey = apiKeyInput.value.trim();
+            const statusDiv = document.getElementById('apiKeyStatus');
+            
+            if (!apiKey) {
+                showApiKeyStatus('APIキーを入力してください', 'error');
+                return;
+            }
+            
+            if (!apiKey.startsWith('sk-')) {
+                showApiKeyStatus('正しいAPIキー形式ではありません（sk-で始まる必要があります）', 'error');
+                return;
+            }
+            
+            // APIキーを設定
+            OPENAI_API_KEY = apiKey;
+            
+            // 入力欄をクリア（セキュリティのため）
+            apiKeyInput.value = '';
+            
+            showApiKeyStatus('APIキーが設定されました！ 画像を選択してください 🎉', 'success');
+            
+            // 画像選択を有効化
+            uploadContainer.style.opacity = '1';
+            uploadContainer.style.pointerEvents = 'auto';
+        }
+
+        function showApiKeyStatus(message, type) {
+            const statusDiv = document.getElementById('apiKeyStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.textContent = message;
+            statusDiv.className = `api-status ${type}`;
+        }
+
+        function checkApiKey() {
+            if (!OPENAI_API_KEY) {
+                showError('まず OpenAI APIキーを設定してください 🔑');
+                return false;
+            }
+            return true;
+        }
 
         // ファイルアップロード関連
         uploadArea.addEventListener('click', () => fileInput.click());
@@ -447,7 +573,7 @@
                 previewContainer.innerHTML = `
                     <img src="${e.target.result}" alt="選択した画像" class="image-preview">
                     <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
-                        この しゃしんで ぬりえを つくるよ！ 🎨
+                        この しゃしんで 超かわいい ぬりえを つくるよ！ 🎨
                     </p>
                 `;
             };
@@ -471,155 +597,204 @@
             successMessage.style.display = 'none';
         }
 
-        // ぬりえ生成処理
-        console.log('Setting up button event listener...');
-        generateButton.addEventListener('click', function(event) {
-            console.log('=== BUTTON CLICKED ===');
-            console.log('Event:', event);
-            console.log('Button disabled:', generateButton.disabled);
+        // メイン処理：ぬりえ生成
+        generateButton.addEventListener('click', generateColoring);
+
+        async function generateColoring() {
+            console.log('=== generateColoring function called (フロントエンド直接API版) ===');
             
-            // デフォルトの動作を防ぐ
-            event.preventDefault();
-            event.stopPropagation();
+            if (!checkApiKey()) return;
             
-            // 非同期関数を呼び出し
-            generateColoring().catch(error => {
-                console.error('Error in generateColoring:', error);
-            });
-        });
+            if (!selectedFile) {
+                console.error('No file selected');
+                showError('まず しゃしんを えらんでね！');
+                return;
+            }
 
- // generateColoring関数をDALL-E 3版に変更
+            console.log('Selected file:', selectedFile.name, selectedFile.size);
 
-async function generateColoring() {
-    console.log('=== generateColoring function called (DALL-E 3版) ===');
-    
-    if (!selectedFile) {
-        console.error('No file selected');
-        showError('まず しゃしんを えらんでね！');
-        return;
-    }
-
-    console.log('Selected file:', selectedFile.name, selectedFile.size);
-
-    // ローディング表示開始
-    loadingContainer.style.display = 'block';
-    generateButton.disabled = true;
-    resultContainer.style.display = 'none';
-    hideError();
-    
-    // プログレスバー表示
-    progressContainer.style.display = 'block';
-    updateProgress(0, 'しゃしんを あっぷろーどしています...');
-
-    try {
-        console.log('Starting DALL-E 3 direct processing...');
-        
-        // 画像をBase64に変換
-        updateProgress(10, 'しゃしんを じゅんびしています...');
-        
-        let imageData;
-        try {
-            console.log('Converting to base64...');
-            imageData = await fileToBase64(selectedFile);
-            console.log('Base64 conversion completed, length:', imageData.length);
-        } catch (base64Error) {
-            console.error('Base64 conversion error:', base64Error);
-            throw new Error('画像の変換に失敗しました: ' + base64Error.message);
-        }
-        
-        updateProgress(30, 'AI が しゃしんを かいせきして...');
-        updateProgress(50, '超かわいい ぬりえを つくっています... ✨🎨');
-        
-        const requestBody = JSON.stringify({ 
-            imageData: imageData
-        });
-        console.log('Request body prepared, size:', requestBody.length);
-        
-        // DALL-E 3直接処理を開始
-        console.log('Starting DALL-E 3 direct kawaii generation...');
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒でタイムアウト
-
-        try {
-            const response = await fetch('/.netlify/functions/process-dalle3-direct', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: requestBody,
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
+            // ローディング表示開始
+            loadingContainer.style.display = 'block';
+            generateButton.disabled = true;
+            resultContainer.style.display = 'none';
+            hideError();
             
-            console.log('DALL-E 3 response status:', response.status);
-            console.log('DALL-E 3 response ok:', response.ok);
+            // プログレスバー表示
+            progressContainer.style.display = 'block';
+            updateProgress(0, 'しゃしんを あっぷろーどしています...');
 
-            let result;
-            let responseText;
-            
             try {
-                // レスポンステキストを取得
-                responseText = await response.text();
-                console.log('Raw response text:', responseText);
-                console.log('Response text length:', responseText.length);
+                console.log('Starting frontend direct API processing...');
                 
-                if (!responseText || responseText.trim() === '') {
-                    throw new Error('Empty response from server');
+                // 画像をBase64に変換
+                updateProgress(10, 'しゃしんを じゅんびしています...');
+                
+                let imageData;
+                try {
+                    console.log('Converting to base64...');
+                    imageData = await fileToBase64(selectedFile);
+                    console.log('Base64 conversion completed, length:', imageData.length);
+                } catch (base64Error) {
+                    console.error('Base64 conversion error:', base64Error);
+                    throw new Error('画像の変換に失敗しました: ' + base64Error.message);
                 }
                 
-                // JSONパース
-                result = JSON.parse(responseText);
-                console.log('Parsed result:', result);
-                
-            } catch (parseError) {
-                console.error('JSON parse error:', parseError);
-                console.error('Response text was:', responseText || 'undefined');
-                throw new Error(`サーバーからの応答形式が正しくありません: ${parseError.message}`);
-            }
+                updateProgress(30, 'AI が しゃしんを かいせきしています...');
 
-            if (!response.ok) {
-                throw new Error(`DALL-E 3処理に失敗: HTTP ${response.status}: ${result.error || 'Unknown error'}`);
-            }
-            
-            updateProgress(100, 'かわいい ぬりえが できました！');
-
-            if (result.success && result.imageUrl) {
-                generatedImageUrl = result.imageUrl;
+                // Step 1: GPT-4V で画像解析
+                console.log('Analyzing image with GPT-4V...');
                 
-                // 検出された被写体も表示
-                let detectionMessage = '';
-                if (result.detectedSubject) {
-                    detectionMessage = `📸 しゃしんから「${result.detectedSubject}」を はっけん！`;
+                let subject = "かわいいキャラクター";
+                try {
+                    const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: "gpt-4o",
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: [
+                                        {
+                                            type: "text",
+                                            text: "この画像の主な被写体を1-2語で簡潔に教えてください（例：猫、犬、花、車、人など）"
+                                        },
+                                        {
+                                            type: "image_url",
+                                            image_url: {
+                                                url: imageData
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            max_tokens: 50
+                        }),
+                    });
+
+                    if (analysisResponse.ok) {
+                        const analysisResult = await analysisResponse.json();
+                        if (analysisResult.choices && analysisResult.choices[0]) {
+                            subject = analysisResult.choices[0].message.content.trim();
+                            console.log('Detected subject:', subject);
+                        }
+                    } else {
+                        console.log('Image analysis failed, using default subject');
+                    }
+                } catch (analysisError) {
+                    console.log('Image analysis failed, using default subject:', analysisError);
+                }
+
+                updateProgress(50, 'かわいい ぬりえを つくっています... ✨');
+
+                // Step 2: DALL-E 3で超可愛い線画生成
+                console.log('Generating kawaii coloring page with DALL-E 3...');
+
+                const kawaiPrompt = `Create an extremely cute kawaii-style coloring book page featuring "${subject}" for children ages 3-6.
+
+🎨 ESSENTIAL STYLE REQUIREMENTS:
+- Ultra-thick black outlines (6-7px thick) perfect for small hands and chunky crayons
+- Pure white background with absolutely no textures, patterns, or shading
+- SUPER kawaii chibi style with ENORMOUS round eyes (eyes = 1/3 of head size)
+- Tiny dot nose and small curved smile
+- Extreme chibi proportions: head 3x larger than body
+- All shapes puffy and rounded like soft marshmallows or pillows
+- Remove ALL internal details, patterns, textures, and small elements
+- Simplify everything to basic geometric shapes (circles, ovals, rounded rectangles)
+- Maximum Japanese kawaii cuteness (Hello Kitty / Pikachu / Pusheen level)
+- Perfect for ages 3-6 with thick crayons or markers
+- ONLY black outlines on pure white background - NO colors, shading, or gradients
+
+Think: if a 3-year-old drew this with the cutest possible style, what would it look like?`;
+
+                const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "dall-e-3",
+                        prompt: kawaiPrompt,
+                        n: 1,
+                        size: "1024x1024",
+                        quality: "hd",
+                        style: "natural"
+                    }),
+                });
+
+                console.log('DALL-E 3 response status:', dalle3Response.status);
+
+                if (!dalle3Response.ok) {
+                    const errorData = await dalle3Response.json();
+                    console.error('DALL-E 3 API error:', errorData);
+                    
+                    // エラーメッセージを詳細化
+                    let errorMessage = `DALL-E 3 API error: ${dalle3Response.status}`;
+                    if (errorData.error) {
+                        if (errorData.error.code === 'insufficient_quota') {
+                            errorMessage = 'APIクレジットが不足しています。OpenAIアカウントで使用量を確認してください 💳';
+                        } else if (errorData.error.code === 'invalid_api_key') {
+                            errorMessage = 'APIキーが無効です。正しいAPIキーを設定してください 🔑';
+                        } else {
+                            errorMessage = errorData.error.message || errorMessage;
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const dalle3Result = await dalle3Response.json();
+                console.log('DALL-E 3 result:', dalle3Result);
+
+                if (dalle3Result.data && dalle3Result.data.length > 0) {
+                    updateProgress(100, 'かわいい ぬりえが できました！');
+                    
+                    console.log('DALL-E 3 kawaii generation successful!');
+                    generatedImageUrl = dalle3Result.data[0].url;
+                    
+                    // 結果表示（検出された被写体情報も含める）
+                    let detectionMessage = '';
+                    if (subject !== "かわいいキャラクター") {
+                        const objectNames = {
+                            'cat': 'ねこ', 'dog': 'いぬ', 'rabbit': 'うさぎ', 'bird': 'とり', 
+                            'flower': 'おはな', 'car': 'くるま', 'ball': 'ボール', 'bear': 'くま',
+                            'mouse': 'ねずみ', 'fish': 'さかな', 'tree': 'き', 'sun': 'おひさま'
+                        };
+                        const japaneseName = objectNames[subject.toLowerCase()] || subject;
+                        detectionMessage = `📸 しゃしんから「${japaneseName}」を はっけん！`;
+                    }
+                    
+                    showResult(dalle3Result.data[0].url, 'DALL-E-3-Direct-API', detectionMessage);
+                } else {
+                    throw new Error('DALL-E 3 generation returned no results');
                 }
                 
-                showResult(result.imageUrl, result.model, detectionMessage);
-            } else {
-                throw new Error(result.error || 'DALL-E 3画像の生成に失敗しました');
-            }
-
-        } catch (fetchError) {
-            if (fetchError.name === 'AbortError') {
-                throw new Error('処理に時間がかかりすぎました（30秒でタイムアウト）');
-            } else {
-                throw fetchError;
+            } catch (error) {
+                console.error('=== MAIN ERROR HANDLER ===');
+                console.error('Error type:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+                
+                // エラーメッセージを詳細化
+                let errorMessage = error.message;
+                if (error.message.includes('401')) {
+                    errorMessage = 'OpenAI APIキーが正しく設定されていません 🔑\nAPIキーを確認してください';
+                } else if (error.message.includes('429')) {
+                    errorMessage = 'API使用量の上限に達しました ⏰\nしばらく待ってから再試行してください';
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorMessage = 'ネットワーク接続に問題があります 🌐\nインターネット接続を確認してください';
+                }
+                
+                showError(`エラーが発生しました 😢\n\n${errorMessage}\n\nもういちど ためしてね！`);
+            } finally {
+                loadingContainer.style.display = 'none';
+                generateButton.disabled = false;
+                progressContainer.style.display = 'none';
             }
         }
-        
-    } catch (error) {
-        console.error('=== MAIN ERROR HANDLER ===');
-        console.error('Error type:', error.name);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        
-        showError(`エラーが発生しました 😢\n\n${error.message}\n\nもういちど ためしてね！`);
-    } finally {
-        loadingContainer.style.display = 'none';
-        generateButton.disabled = false;
-        progressContainer.style.display = 'none';
-    }
-}
 
         // プログレスバー更新
         function updateProgress(percent, message) {
@@ -641,23 +816,17 @@ async function generateColoring() {
         function showResult(imageUrl, model, detectedObject) {
             let detectionMessage = '';
             if (detectedObject) {
-                const objectNames = {
-                    'cat': 'ねこ', 'dog': 'いぬ', 'rabbit': 'うさぎ', 'bird': 'とり', 
-                    'flower': 'おはな', 'car': 'くるま', 'ball': 'ボール', 'bear': 'くま',
-                    'mouse': 'ねずみ', 'fish': 'さかな', 'tree': 'き', 'sun': 'おひさま'
-                };
-                const japaneseName = objectNames[detectedObject] || detectedObject;
-                detectionMessage = `<p style="color: #FF69B4; font-size: 1rem; margin-bottom: 10px;">📸 しゃしんから「${japaneseName}」を はっけん！</p>`;
+                detectionMessage = `<p style="color: #FF69B4; font-size: 1rem; margin-bottom: 10px;">${detectedObject}</p>`;
             }
 
             document.getElementById('resultImage').innerHTML = `
                 <div style="margin-bottom: 20px;">
-                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 かわいい ぬりえが できたよ！</p>
+                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 超かわいい ぬりえが できたよ！</p>
                     ${detectionMessage}
                     <img src="${imageUrl}" alt="生成されたぬりえ" style="max-width: 100%; max-height: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #FFB6C1;">
                     <p style="color: #8B4513; font-size: 1rem; margin-top: 10px;">
                         じぶんだけの オリジナル ぬりえだよ！ 🌈<br>
-                        ${model ? `<small>(${model}で せいせい)</small>` : ''}
+                        <small>(${model}で せいせい)</small>
                     </p>
                 </div>
             `;
@@ -733,22 +902,6 @@ async function generateColoring() {
             showSuccess('ぬりえを ダウンロードしました！ 📥');
         }
 
-        function testFunction() {
-            console.log('=== TEST FUNCTION CALLED ===');
-            console.log('Selected file:', selectedFile);
-            
-            if (!selectedFile) {
-                alert('まず画像を選択してください');
-                return;
-            }
-            
-            // 手動でgenerateColoringを呼び出し
-            generateColoring().catch(error => {
-                console.error('Test function error:', error);
-                alert('テスト実行でエラー: ' + error.message);
-            });
-        }
-
         function resetApp() {
             selectedFile = null;
             generatedImageUrl = null;
@@ -762,6 +915,9 @@ async function generateColoring() {
             // トップにスクロール
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
+        // 初期化
+        console.log('Frontend Direct API version initialized');
     </script>
 </body>
 </html>
