@@ -526,7 +526,12 @@
                     if (result.status === 'completed') {
                         return result;
                     } else if (result.status === 'failed') {
-                        throw new Error(result.error || 'Image processing failed');
+                        // NSFWエラーの場合の特別な処理
+                        if (result.isNSFW) {
+                            throw new Error('この しゃしんは ぬりえに てきしていません 😅\n\nどうぶつ、はな、おもちゃなどの しゃしんを ためしてみてね！');
+                        } else {
+                            throw new Error(result.error || 'Image processing failed');
+                        }
                     } else {
                         // まだ処理中
                         const progress = Math.min(30 + (attempts * 2), 95);

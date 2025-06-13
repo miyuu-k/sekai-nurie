@@ -70,13 +70,23 @@ exports.handler = async (event, context) => {
         }),
       };
     } else if (result.status === 'failed') {
+      // NSFWエラーの場合の特別な処理
+      const errorMessage = result.error || 'Image processing failed';
+      const isNSFWError = errorMessage.toLowerCase().includes('nsfw');
+      
       return {
-        statusCode: 500,
+        statusCode: 400, // NSFWエラーは400番台にする
         headers,
         body: JSON.stringify({
           status: 'failed',
-          error: result.error || 'Image processing failed',
-          jobId: jobId
+          error: isNSFWError ? 
+            'この画像は子ども向けぬりえに適していません。別の画像をお試しください。' : 
+            errorMessage,
+          isNSFW: isNSFWError,
+          jobId: jobId,
+          suggestion: isNSFWError ? 
+            'Try uploading a different image (animals, flowers, toys, etc.)' : 
+            'Please try again with a different image'
         }),
       };
     } else {

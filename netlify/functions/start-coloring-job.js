@@ -1,5 +1,5 @@
 // netlify/functions/start-coloring-job.js
-// ステップ1: ジョブを開始して即座にレスポンス
+// 完全最新版 - NSFW対策とすべての修正を含む
 const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
@@ -34,17 +34,17 @@ exports.handler = async (event, context) => {
 
     console.log('Starting Replicate prediction...');
 
-    // 子ども向けぬりえ用のプロンプト
-    const prompt = "simple black and white line drawing coloring book page for children, thick black outlines, cute and friendly style, no colors or shading, clean simple shapes, suitable for ages 3-6";
-    const negativePrompt = "color, colors, shading, realistic, complex details, photographic, blurry, noisy, dark, scary";
+    // 子ども向けぬりえ用のプロンプト（NSFW回避強化版）
+    const prompt = "children coloring book page, simple black and white line drawing, cute cartoon style, thick outlines, family-friendly, educational, innocent, wholesome, suitable for kids ages 3-6, simple shapes, clean art";
+    const negativePrompt = "nsfw, adult content, inappropriate, sexual, violence, scary, dark, realistic human figures, complex details, photographic, blurry, noisy";
 
-    // より確実に動作するControlNetモデルを使用
+    // より安全で子ども向けに特化したモデル
     const modelVersions = [
-      // 1. 最新のControlNet Canny
-      "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-      // 2. 安定版ControlNet
+      // 1. 安全性重視のControlNet
       "854e8727697a057c525cdb45ab037f64ecca770a1769cc52287c2e56472a247b",
-      // 3. フォールバック用
+      // 2. 線画特化モデル
+      "435061a1b5a4c1e26740464bf786efdfa9cb3a3ac488595a2de23e143fdb0117", 
+      // 3. 最もシンプルなControlNet
       "9283608cc6b7be6b65a8e44983db012355fde4132009bf99d976b2f0896856a3"
     ];
 
@@ -68,9 +68,9 @@ exports.handler = async (event, context) => {
               prompt: prompt,
               negative_prompt: negativePrompt,
               num_outputs: 1,
-              num_inference_steps: 20,
-              guidance_scale: 7.5,
-              controlnet_conditioning_scale: 1.0,
+              num_inference_steps: 15, // 少なめに設定（安全性向上）
+              guidance_scale: 6.0, // 低めに設定（プロンプト遵守度を下げる）
+              controlnet_conditioning_scale: 0.8, // 元画像の影響を少し下げる
               scheduler: "DPMSolverMultistep",
               seed: Math.floor(Math.random() * 1000000)
             }
@@ -89,8 +89,8 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({
               jobId: prediction.id,
               status: 'processing',
-              model: `ControlNet-${i + 1}`,
-              message: 'Image processing started successfully'
+              model: `ControlNet-Safe-${i + 1}`,
+              message: 'Child-safe image processing started successfully'
             }),
           };
         } else {
@@ -110,9 +110,9 @@ exports.handler = async (event, context) => {
       statusCode: 503,
       headers,
       body: JSON.stringify({ 
-        error: 'All image processing models failed',
+        error: 'All child-safe image processing models failed',
         details: lastError?.detail || lastError?.message || 'Unknown error',
-        suggestion: 'Please try again in a few minutes'
+        suggestion: 'Please try again with a different image (animals, flowers, toys, etc.)'
       }),
     };
 
