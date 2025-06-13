@@ -66,6 +66,7 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({
           status: 'completed',
           imageUrl: result.output[0],
+          detectedObject: result.detectedObject, // 追加
           jobId: jobId
         }),
       };

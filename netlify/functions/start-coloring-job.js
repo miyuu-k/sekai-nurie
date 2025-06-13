@@ -1,5 +1,5 @@
 // netlify/functions/start-coloring-job.js
-// 完全最新版 - NSFW対策とすべての修正を含む
+// ハイブリッドアプローチ: 画像分析 → 可愛いぬりえ生成
 const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
@@ -32,28 +32,69 @@ exports.handler = async (event, context) => {
       };
     }
 
-    console.log('Starting Replicate prediction...');
+    console.log('Starting hybrid approach: analyzing image...');
 
-    // 超シンプル子ども向け線画プロンプト（構造重視）
-    const prompt = "simple cute cartoon animal coloring book, thick black outlines, baby style, round shapes, big kawaii eyes, simple coloring page for 3 year old children, minimal line art, no details inside, just outline shapes, chibi cartoon style";
-    const negativePrompt = "realistic, detailed fur, whiskers, complex textures, photographic, shading, gradients, filled black areas, adult coloring book, intricate details, realistic proportions";
+    // Step 1: GPT-4 Visionで画像を分析
+    const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "gpt-4-vision-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "この画像に写っているものを1つの単語で答えてください。動物の場合は動物名（例：cat, dog, rabbit）、物の場合は物の名前（例：flower, car, ball）を英語で答えてください。1単語のみでお答えください。"
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageData
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 10
+      }),
+    });
 
-    // より適切なControlNetモデル（線画生成特化）
-    const modelVersions = [
-      // 1. Scribble ControlNet - ラフな線画に適している
-      "b27b6fcb0d8b656af5c1a5f3e83d7b47a4d696c50ee6b2d4b3a9b2f3e4c5d6e7",
-      // 2. Lineart ControlNet - 線画専用
-      "28c1b2925c1b18c0b3b5b6c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3",
-      // 3. より柔軟なControlNet
-      "435061a1b5a4c1e26740464bf786efdfa9cb3a3ac488595a2de23e143fdb0117"
+    let detectedObject = "animal"; // デフォルト値
+
+    if (visionResponse.ok) {
+      const visionResult = await visionResponse.json();
+      detectedObject = visionResult.choices[0].message.content.trim().toLowerCase();
+      console.log('Detected object:', detectedObject);
+    } else {
+      console.log('Vision analysis failed, using default');
+    }
+
+    // Step 2: 検出されたオブジェクトに基づいて可愛いぬりえを生成
+    const coloringPrompt = `cute kawaii ${detectedObject} coloring book page for toddlers and young children, simple thick black outlines only, big round kawaii eyes, baby style, chibi cartoon proportions, minimal details inside shapes, clean simple line art, suitable for ages 3-6, no shading or colors, just black outlines on white background, adorable cartoon style`;
+
+    const negativePrompt = "realistic, detailed, complex, photographic, shading, gradients, colors, filled areas, adult coloring book, intricate patterns, fine details, scary, dark, nsfw";
+
+    // 可愛いぬりえ生成用のモデル
+    const coloringModels = [
+      // 1. Stable Diffusion (text-to-image)
+      "ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
+      // 2. より新しいSD model
+      "27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+      // 3. フォールバック
+      "db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf"
     ];
 
     let lastError = null;
 
-    // 複数のモデルを順番に試行
-    for (let i = 0; i < modelVersions.length; i++) {
+    // 複数のモデルを試行
+    for (let i = 0; i < coloringModels.length; i++) {
       try {
-        console.log(`Trying model ${i + 1}/${modelVersions.length}: ${modelVersions[i]}`);
+        console.log(`Trying coloring model ${i + 1}/${coloringModels.length}`);
 
         const response = await fetch('https://api.replicate.com/v1/predictions', {
           method: 'POST',
@@ -62,16 +103,16 @@ exports.handler = async (event, context) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            version: modelVersions[i],
+            version: coloringModels[i],
             input: {
-              image: imageData,
-              prompt: prompt,
+              prompt: coloringPrompt,
               negative_prompt: negativePrompt,
+              width: 512,
+              height: 512,
               num_outputs: 1,
-              num_inference_steps: 20, // 少し下げる（シンプル化）
-              guidance_scale: 9.0, // 調整
-              controlnet_conditioning_scale: 0.6, // バランス調整
-              scheduler: "K_EULER_ANCESTRAL", // 別のスケジューラーを試行
+              num_inference_steps: 25,
+              guidance_scale: 8.0,
+              scheduler: "DPMSolverMultistep",
               seed: Math.floor(Math.random() * 1000000)
             }
           }),
@@ -80,39 +121,41 @@ exports.handler = async (event, context) => {
         const prediction = await response.json();
 
         if (response.ok && prediction.id) {
-          console.log(`Model ${i + 1} succeeded. Prediction started:`, prediction.id);
+          console.log(`Coloring model ${i + 1} succeeded. Prediction started:`, prediction.id);
           
-          // 成功した場合、即座にジョブIDを返す
+          // 成功した場合、ジョブIDと検出結果を返す
           return {
-            statusCode: 202, // Accepted
+            statusCode: 202,
             headers,
             body: JSON.stringify({
               jobId: prediction.id,
               status: 'processing',
-              model: `ControlNet-Safe-${i + 1}`,
-              message: 'Child-safe image processing started successfully'
+              detectedObject: detectedObject,
+              model: `Kawaii-Generator-${i + 1}`,
+              message: `Generating cute ${detectedObject} coloring page`
             }),
           };
         } else {
-          console.error(`Model ${i + 1} failed:`, prediction);
+          console.error(`Coloring model ${i + 1} failed:`, prediction);
           lastError = prediction;
         }
 
       } catch (error) {
-        console.error(`Model ${i + 1} error:`, error);
+        console.error(`Coloring model ${i + 1} error:`, error);
         lastError = error;
       }
     }
 
     // すべてのモデルが失敗した場合
-    console.error('All models failed');
+    console.error('All coloring models failed');
     return {
       statusCode: 503,
       headers,
       body: JSON.stringify({ 
-        error: 'All child-safe image processing models failed',
+        error: 'Failed to generate cute coloring page',
+        detectedObject: detectedObject,
         details: lastError?.detail || lastError?.message || 'Unknown error',
-        suggestion: 'Please try again with a different image (animals, flowers, toys, etc.)'
+        suggestion: 'Please try again in a few minutes'
       }),
     };
 

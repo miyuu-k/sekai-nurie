@@ -498,7 +498,7 @@
 
                 if (result.imageUrl) {
                     generatedImageUrl = result.imageUrl;
-                    showResult(result.imageUrl, 'Replicate AI');
+                    showResult(result.imageUrl, 'Kawaii AI', result.detectedObject);
                 } else {
                     throw new Error('画像の生成に失敗しました');
                 }
@@ -580,13 +580,25 @@
             });
         }
 
-        function showResult(imageUrl, model) {
+        function showResult(imageUrl, model, detectedObject) {
+            let detectionMessage = '';
+            if (detectedObject) {
+                const objectNames = {
+                    'cat': 'ねこ', 'dog': 'いぬ', 'rabbit': 'うさぎ', 'bird': 'とり', 
+                    'flower': 'おはな', 'car': 'くるま', 'ball': 'ボール', 'bear': 'くま',
+                    'mouse': 'ねずみ', 'fish': 'さかな', 'tree': 'き', 'sun': 'おひさま'
+                };
+                const japaneseName = objectNames[detectedObject] || detectedObject;
+                detectionMessage = `<p style="color: #FF69B4; font-size: 1rem; margin-bottom: 10px;">📸 しゃしんから「${japaneseName}」を はっけん！</p>`;
+            }
+
             document.getElementById('resultImage').innerHTML = `
                 <div style="margin-bottom: 20px;">
-                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 すてきな ぬりえが できたよ！</p>
+                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 かわいい ぬりえが できたよ！</p>
+                    ${detectionMessage}
                     <img src="${imageUrl}" alt="生成されたぬりえ" style="max-width: 100%; max-height: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #FFB6C1;">
                     <p style="color: #8B4513; font-size: 1rem; margin-top: 10px;">
-                        いろんないろで ぬってたのしんでね 🌈<br>
+                        じぶんだけの オリジナル ぬりえだよ！ 🌈<br>
                         ${model ? `<small>(${model}で せいせい)</small>` : ''}
                     </p>
                 </div>
