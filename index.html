@@ -346,6 +346,20 @@
     </div>
 
     <script>
+        // グローバルエラーハンドラー
+        window.addEventListener('error', function(e) {
+            console.error('=== GLOBAL ERROR ===');
+            console.error('Error:', e.error);
+            console.error('Message:', e.message);
+            console.error('Filename:', e.filename);
+            console.error('Line:', e.lineno);
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('=== UNHANDLED PROMISE REJECTION ===');
+            console.error('Reason:', e.reason);
+        });
+
         let selectedFile = null;
         let generatedImageUrl = null;
 
@@ -504,8 +518,13 @@
                 }
                 
             } catch (error) {
-                console.error('Error:', error);
-                showError(`ごめんね、エラーが おきちゃった 😢\n${error.message}\n\nもういちど ためしてね！`);
+                console.error('=== MAIN ERROR HANDLER ===');
+                console.error('Error type:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+                console.error('Selected file:', selectedFile);
+                
+                showError(`エラーが発生しました 😢\n\n${error.message}\n\nブラウザのコンソールを確認してください。`);
             } finally {
                 loadingContainer.style.display = 'none';
                 generateButton.disabled = false;
