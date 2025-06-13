@@ -38,14 +38,14 @@ exports.handler = async (event, context) => {
     const prompt = "transform into very simple cute cartoon coloring book style, thick black outline only, baby animal style, huge kawaii eyes, round simple shapes, minimal details, coloring book for toddlers, extremely simplified, chibi cartoon style, no fur texture, no whiskers details, just basic cute shapes";
     const negativePrompt = "realistic fur, detailed texture, whiskers, complex lines, fine details, realistic eyes, photographic, shading, gradients, intricate patterns, adult coloring book, detailed drawings, realistic proportions, complex features";
 
-    // より元画像に忠実なControlNetモデル（Canny Edge Detection特化）
+    // 子ども向けデフォルメに適したモデル順
     const modelVersions = [
-      // 1. ControlNet Canny (エッジ検出で輪郭を正確に保持)
-      "aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613",
-      // 2. より強力なControlNet
-      "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-      // 3. 安定版ControlNet
-      "854e8727697a057c525cdb45ab037f64ecca770a1769cc52287c2e56472a247b"
+      // 1. より柔軟性の高いControlNet
+      "435061a1b5a4c1e26740464bf786efdfa9cb3a3ac488595a2de23e143fdb0117",
+      // 2. Scribble ControlNet（ラフな線画向け）
+      "9283608cc6b7be6b65a8e44983db012355fde4132009bf99d976b2f0896856a3",
+      // 3. 基本ControlNet Canny（最後の手段）
+      "aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613"
     ];
 
     let lastError = null;
