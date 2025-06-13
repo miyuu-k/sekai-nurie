@@ -34,18 +34,18 @@ exports.handler = async (event, context) => {
 
     console.log('Starting Replicate prediction...');
 
-    // 子ども向けぬりえ用のプロンプト（NSFW回避強化版）
-    const prompt = "children coloring book page, simple black and white line drawing, cute cartoon style, thick outlines, family-friendly, educational, innocent, wholesome, suitable for kids ages 3-6, simple shapes, clean art";
-    const negativePrompt = "nsfw, adult content, inappropriate, sexual, violence, scary, dark, realistic human figures, complex details, photographic, blurry, noisy";
+    // より具体的で元画像を重視するプロンプト
+    const prompt = "convert this image to clean black and white line art coloring book page, preserve the main subject and shapes from the original image, thick black outlines, simple clean lines, suitable for children coloring, maintain the composition and key features";
+    const negativePrompt = "nsfw, adult content, inappropriate, sexual, violence, scary, realistic shading, complex details, photographic, blurry, noisy, colors, filled areas";
 
-    // より安全で子ども向けに特化したモデル
+    // より元画像に忠実なControlNetモデル（Canny Edge Detection特化）
     const modelVersions = [
-      // 1. 安全性重視のControlNet
-      "854e8727697a057c525cdb45ab037f64ecca770a1769cc52287c2e56472a247b",
-      // 2. 線画特化モデル
-      "435061a1b5a4c1e26740464bf786efdfa9cb3a3ac488595a2de23e143fdb0117", 
-      // 3. 最もシンプルなControlNet
-      "9283608cc6b7be6b65a8e44983db012355fde4132009bf99d976b2f0896856a3"
+      // 1. ControlNet Canny (エッジ検出で輪郭を正確に保持)
+      "aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613",
+      // 2. より強力なControlNet
+      "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+      // 3. 安定版ControlNet
+      "854e8727697a057c525cdb45ab037f64ecca770a1769cc52287c2e56472a247b"
     ];
 
     let lastError = null;
@@ -68,9 +68,9 @@ exports.handler = async (event, context) => {
               prompt: prompt,
               negative_prompt: negativePrompt,
               num_outputs: 1,
-              num_inference_steps: 15, // 少なめに設定（安全性向上）
-              guidance_scale: 6.0, // 低めに設定（プロンプト遵守度を下げる）
-              controlnet_conditioning_scale: 0.8, // 元画像の影響を少し下げる
+              num_inference_steps: 20, // 品質向上のため少し増加
+              guidance_scale: 7.0, // 元画像との関連性を高める
+              controlnet_conditioning_scale: 1.2, // 元画像の影響を強化
               scheduler: "DPMSolverMultistep",
               seed: Math.floor(Math.random() * 1000000)
             }
