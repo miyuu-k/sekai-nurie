@@ -488,156 +488,130 @@
             });
         });
 
-        async function generateColoring() {
-            console.log('=== generateColoring function called ===');
+        // generateColoring関数の修正版（Background Function呼び出しを削除）
+
+async function generateColoring() {
+    console.log('=== generateColoring function called ===');
+    
+    if (!selectedFile) {
+        console.error('No file selected');
+        showError('まず しゃしんを えらんでね！');
+        return;
+    }
+
+    console.log('Selected file:', selectedFile.name, selectedFile.size);
+
+    // ローディング表示開始
+    loadingContainer.style.display = 'block';
+    generateButton.disabled = true;
+    resultContainer.style.display = 'none';
+    hideError();
+    
+    // プログレスバー表示
+    progressContainer.style.display = 'block';
+    updateProgress(0, 'しゃしんを あっぷろーどしています...');
+
+    try {
+        console.log('Starting image processing...');
+        
+        // 画像をBase64に変換
+        updateProgress(10, 'しゃしんを じゅんびしています...');
+        
+        let imageData;
+        try {
+            console.log('Converting to base64...');
+            imageData = await fileToBase64(selectedFile);
+            console.log('Base64 conversion completed, length:', imageData.length);
+        } catch (base64Error) {
+            console.error('Base64 conversion error:', base64Error);
+            throw new Error('画像の変換に失敗しました: ' + base64Error.message);
+        }
+        
+        updateProgress(30, 'AI が しゃしんを かわいい ぬりえに へんしんさせています...');
+        
+        const requestBody = JSON.stringify({ 
+            imageData: imageData
+        });
+        console.log('Request body prepared, size:', requestBody.length);
+        
+        // 改良版同期処理のみを実行
+        console.log('Calling improved sync function...');
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒でタイムアウト
+
+        try {
+            const response = await fetch('/.netlify/functions/process-dalle2-img2img-sync', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: requestBody,
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
             
-            if (!selectedFile) {
-                console.error('No file selected');
-                showError('まず しゃしんを えらんでね！');
-                return;
+            console.log('Sync response status:', response.status);
+            console.log('Sync response ok:', response.ok);
+
+            let result;
+            let responseText;
+            
+            try {
+                // レスポンステキストを取得
+                responseText = await response.text();
+                console.log('Raw response text:', responseText);
+                console.log('Response text length:', responseText.length);
+                
+                if (!responseText || responseText.trim() === '') {
+                    throw new Error('Empty response from server');
+                }
+                
+                // JSONパース
+                result = JSON.parse(responseText);
+                console.log('Parsed result:', result);
+                
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                console.error('Response text was:', responseText || 'undefined');
+                throw new Error(`サーバーからの応答形式が正しくありません: ${parseError.message}`);
             }
 
-            console.log('Selected file:', selectedFile.name, selectedFile.size);
-
-            // ローディング表示開始
-            loadingContainer.style.display = 'block';
-            generateButton.disabled = true;
-            resultContainer.style.display = 'none';
-            hideError();
+            if (!response.ok) {
+                throw new Error(`処理に失敗: HTTP ${response.status}: ${result.error || 'Unknown error'}`);
+            }
             
-            // プログレスバー表示
-            progressContainer.style.display = 'block';
-            updateProgress(0, 'しゃしんを あっぷろーどしています...');
+            updateProgress(100, 'かわいい ぬりえが できました！');
 
-            try {
-                console.log('Starting image processing...');
-                
-                // 画像をBase64に変換
-                updateProgress(10, 'しゃしんを じゅんびしています...');
-                
-                let imageData;
-                try {
-                    console.log('Converting to base64...');
-                    imageData = await fileToBase64(selectedFile);
-                    console.log('Base64 conversion completed, length:', imageData.length);
-                } catch (base64Error) {
-                    console.error('Base64 conversion error:', base64Error);
-                    throw new Error('画像の変換に失敗しました: ' + base64Error.message);
-                }
-                
-                updateProgress(20, 'AI が しゃしんを かいせきしています...');
-                
-                const requestBody = JSON.stringify({ 
-                    imageData: imageData
-                });
-                console.log('Request body prepared, size:', requestBody.length);
-                
-                // まず同期版を試行（10秒以内）
-                updateProgress(30, 'クイック処理を試行中...');
-                
-                try {
-                    const quickResponse = await fetch('/.netlify/functions/process-dalle2-img2img-sync', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: requestBody
-                    });
+            if (result.success && result.imageUrl) {
+                generatedImageUrl = result.imageUrl;
+                showResult(result.imageUrl, result.model, result.detectedObject || '');
+            } else {
+                throw new Error(result.error || '画像の生成に失敗しました');
+            }
 
-                    if (quickResponse.ok) {
-                        const quickResult = await quickResponse.json();
-                        if (quickResult.success) {
-                            console.log('Quick processing successful!');
-                            updateProgress(100, 'ぬりえが できました！');
-                            generatedImageUrl = quickResult.imageUrl;
-                            showResult(quickResult.imageUrl, quickResult.model, 'クイック処理');
-                            return; // 成功したので終了
-                        }
-                    }
-                    
-                    console.log('Quick processing failed, trying background processing...');
-                } catch (quickError) {
-                    console.log('Quick processing error:', quickError.message);
-                }
-
-                // クイック処理が失敗した場合、Background処理を実行
-                updateProgress(40, 'Background処理を開始...');
-
-                // DALL-E 2 img-to-img Background Functionを呼び出し
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分
-
-                try {
-                    const response = await fetch('/.netlify/functions/process-dalle2-img2img-background', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: requestBody,
-                        signal: controller.signal
-                    });
-
-                    clearTimeout(timeoutId);
-                    
-                    console.log('Background response status:', response.status);
-                    console.log('Background response ok:', response.ok);
-
-                let result;
-                let responseText;
-                try {
-                    // レスポンステキストを取得
-                    responseText = await response.text();
-                    console.log('Raw response text:', responseText);
-                    console.log('Response text length:', responseText.length);
-                    
-                    if (!responseText || responseText.trim() === '') {
-                        throw new Error('Empty response from server');
-                    }
-                    
-                    // JSONパース
-                    result = JSON.parse(responseText);
-                    console.log('Parsed result:', result);
-                    
-                } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
-                    console.error('Response text was:', responseText || 'undefined');
-                    throw new Error(`サーバーからの応答形式が正しくありません: ${parseError.message}`);
-                }
-
-                if (!response.ok) {
-                    throw new Error(`背景処理に失敗: HTTP ${response.status}: ${result.error || 'Unknown error'}`);
-                }
-                
-                updateProgress(100, 'ぬりえが できました！');
-
-                    if (result.success && result.imageUrl) {
-                        generatedImageUrl = result.imageUrl;
-                        showResult(result.imageUrl, result.model, result.detectedObject);
-                    } else {
-                        throw new Error(result.error || '画像の生成に失敗しました');
-                    }
-
-                } catch (fetchError) {
-                    if (fetchError.name === 'AbortError') {
-                        throw new Error('処理に時間がかかりすぎました（3分でタイムアウト）');
-                    } else {
-                        throw fetchError;
-                    }
-                }
-                
-            } catch (error) {
-                console.error('=== MAIN ERROR HANDLER ===');
-                console.error('Error type:', error.name);
-                console.error('Error message:', error.message);
-                console.error('Error stack:', error.stack);
-                
-                showError(`エラーが発生しました 😢\n\n${error.message}\n\nもういちど ためしてね！`);
-            } finally {
-                loadingContainer.style.display = 'none';
-                generateButton.disabled = false;
-                progressContainer.style.display = 'none';
+        } catch (fetchError) {
+            if (fetchError.name === 'AbortError') {
+                throw new Error('処理に時間がかかりすぎました（30秒でタイムアウト）');
+            } else {
+                throw fetchError;
             }
         }
+        
+    } catch (error) {
+        console.error('=== MAIN ERROR HANDLER ===');
+        console.error('Error type:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        showError(`エラーが発生しました 😢\n\n${error.message}\n\nもういちど ためしてね！`);
+    } finally {
+        loadingContainer.style.display = 'none';
+        generateButton.disabled = false;
+        progressContainer.style.display = 'none';
+    }
+}
 
         // プログレスバー更新
         function updateProgress(percent, message) {
