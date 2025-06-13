@@ -68,7 +68,10 @@ exports.handler = async (event, context) => {
 };
 
 // グローバルな結果保存オブジェクト
-global.jobResults = global.jobResults || new Map();
+if (!global.jobResults) {
+  global.jobResults = new Map();
+  console.log('Initialized global.jobResults Map');
+}
 
 // 非同期画像処理
 async function processImageAsync(jobId, imageData) {
@@ -81,6 +84,9 @@ async function processImageAsync(jobId, imageData) {
       progress: 10,
       message: 'Starting analysis...'
     });
+    
+    console.log('Set initial status for job:', jobId);
+    console.log('Current jobResults size:', global.jobResults.size);
 
     // OpenAI API Key確認
     if (!process.env.OPENAI_API_KEY) {

@@ -587,9 +587,32 @@
             while (attempts < maxAttempts) {
                 try {
                     const response = await fetch(`/.netlify/functions/check-dalle-job?jobId=${jobId}`);
-                    const result = await response.json();
-
-                    console.log(`Poll attempt ${attempts + 1}: Status = ${result.status}`);
+                    
+                    console.log(`Poll attempt ${attempts + 1}:`, response.status, response.ok);
+                    
+                    if (!response.ok) {
+                        console.error('Check job response not ok:', response.status);
+                        throw new Error(`HTTP ${response.status}: Check job failed`);
+                    }
+                    
+                    let result;
+                    try {
+                        const responseText = await response.text();
+                        console.log('Raw response:', responseText);
+                        
+                        if (!responseText || responseText.trim() === '') {
+                            console.error('Empty response received');
+                            throw new Error('Empty response from server');
+                        }
+                        
+                        result = JSON.parse(responseText);
+                        console.log('Parsed result:', result);
+                        
+                    } catch (parseError) {
+                        console.error('JSON parse error:', parseError);
+                        console.error('Response text was:', responseText);
+                        throw new Error('Invalid response format from server');
+                    }
 
                     if (result.status === 'completed') {
                         return result;
