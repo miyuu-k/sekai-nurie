@@ -488,10 +488,10 @@
             });
         });
 
-        // generateColoring関数の修正版（Background Function呼び出しを削除）
+   // generateColoring関数をハイブリッド版に変更
 
 async function generateColoring() {
-    console.log('=== generateColoring function called ===');
+    console.log('=== generateColoring function called (ハイブリッド版) ===');
     
     if (!selectedFile) {
         console.error('No file selected');
@@ -512,7 +512,7 @@ async function generateColoring() {
     updateProgress(0, 'しゃしんを あっぷろーどしています...');
 
     try {
-        console.log('Starting image processing...');
+        console.log('Starting hybrid processing...');
         
         // 画像をBase64に変換
         updateProgress(10, 'しゃしんを じゅんびしています...');
@@ -527,21 +527,22 @@ async function generateColoring() {
             throw new Error('画像の変換に失敗しました: ' + base64Error.message);
         }
         
-        updateProgress(30, 'AI が しゃしんを かわいい ぬりえに へんしんさせています...');
+        updateProgress(20, 'AI が しゃしんを かいせきしています...');
         
         const requestBody = JSON.stringify({ 
             imageData: imageData
         });
         console.log('Request body prepared, size:', requestBody.length);
         
-        // 改良版同期処理のみを実行
-        console.log('Calling improved sync function...');
+        // ハイブリッド処理を開始
+        console.log('Starting hybrid Replicate + DALL-E 3 processing...');
+        updateProgress(30, '高品質 AI でかわいい ぬりえを つくっています... ✨');
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒でタイムアウト
+        const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分でタイムアウト
 
         try {
-            const response = await fetch('/.netlify/functions/process-dalle2-img2img-sync', {
+            const response = await fetch('/.netlify/functions/process-hybrid-coloring', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -552,8 +553,8 @@ async function generateColoring() {
 
             clearTimeout(timeoutId);
             
-            console.log('Sync response status:', response.status);
-            console.log('Sync response ok:', response.ok);
+            console.log('Hybrid response status:', response.status);
+            console.log('Hybrid response ok:', response.ok);
 
             let result;
             let responseText;
@@ -579,21 +580,26 @@ async function generateColoring() {
             }
 
             if (!response.ok) {
-                throw new Error(`処理に失敗: HTTP ${response.status}: ${result.error || 'Unknown error'}`);
+                throw new Error(`ハイブリッド処理に失敗: HTTP ${response.status}: ${result.error || 'Unknown error'}`);
             }
             
             updateProgress(100, 'かわいい ぬりえが できました！');
 
             if (result.success && result.imageUrl) {
                 generatedImageUrl = result.imageUrl;
-                showResult(result.imageUrl, result.model, result.detectedObject || '');
+                showResult(result.imageUrl, result.model, result.method || '');
+                
+                // デバッグ用：中間結果も表示
+                if (result.roughLineArt) {
+                    console.log('中間結果（粗い線画）:', result.roughLineArt);
+                }
             } else {
-                throw new Error(result.error || '画像の生成に失敗しました');
+                throw new Error(result.error || 'ハイブリッド画像の生成に失敗しました');
             }
 
         } catch (fetchError) {
             if (fetchError.name === 'AbortError') {
-                throw new Error('処理に時間がかかりすぎました（30秒でタイムアウト）');
+                throw new Error('処理に時間がかかりすぎました（3分でタイムアウト）');
             } else {
                 throw fetchError;
             }
