@@ -2,12 +2,9 @@
   functions = "netlify/functions"
   publish = "."
 
-# 非同期処理用のFunction設定
-[functions."start-coloring-job"]
-  timeout = 10
-
-[functions."check-coloring-job"]
-  timeout = 10
+# DALL-E 3 Function設定
+[functions."generate-coloring"]
+  timeout = 30
 
 [functions."test-replicate"]
   timeout = 30
@@ -24,14 +21,3 @@
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
-
-# キャッシュ設定（生成された画像用）
-[[headers]]
-  for = "*.png"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
-[[headers]]
-  for = "*.jpg"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
