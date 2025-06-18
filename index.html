@@ -611,11 +611,11 @@
             statusText.textContent = message;
         }
 
-        // メイン処理：ぬりえ生成（忠実度重視版）
+        // メイン処理：ぬりえ生成（完全忠実版に置き換え）
         generateButton.addEventListener('click', generateColoring);
 
         async function generateColoring() {
-            console.log('=== 忠実度重視版 DALL-E 3 ===');
+            console.log('=== 完全忠実版 DALL-E 3 (3段階解析) ===');
             
             if (!checkApiKey()) return;
             
@@ -637,10 +637,11 @@
                 updateProgress(10, 'しゃしんを じゅんびしています...');
                 const imageData = await fileToBase64(selectedFile);
                 
-                updateProgress(30, 'AI が しゃしんを 詳しく かいせきしています...');
-
-                // 詳細な画像解析
-                const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                // === STAGE 1: 詳細構成分析 ===
+                updateProgress(25, 'AI が しゃしんを 詳しく かいせきしています（段階1/3）...');
+                console.log('STAGE 1: Detailed composition analysis...');
+                
+                const compositionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -654,7 +655,34 @@
                                 content: [
                                     {
                                         type: "text",
-                                        text: "この画像を詳細に分析して、ぬりえ作成用の説明を作ってください。以下の点を正確に記述してください：\n\n1. 人物：何人？性別・年齢は？\n2. 動物：何匹？種類・ポーズは？\n3. 物体：何個？種類・配置は？\n4. 全体の構図・向き・姿勢\n\n正確性を最重視して、見えるものだけを客観的に記述してください。"
+                                        text: `この画像を忠実性重視で詳細に分析してください：
+
+【被写体の詳細】
+- 人物：何人？各人の性別（男性/女性）・年齢層（子ども/大人/高齢者）・服装・髪型・表情は？
+- 動物：何匹？種類・色・模様・ポーズ・表情・向きは？
+- 物体：何個？種類・形・サイズ・配置・状態は？
+
+【構図・ポーズ・サイズの詳細】
+- 各人物・動物のポーズ：座る/立つ/寝る/歩く等
+- 向き：正面/横向き/後ろ向き/斜め向き
+- 視線方向：カメラ目線/横を見る/上を見る等
+- 体の見えている範囲：全身/上半身/頭部のみ/手のみ等
+- 被写体のサイズ：画面に占める割合（大きい/中ぐらい/小さい）
+- 被写体の位置：中央/左/右/上/下
+
+【環境・背景の詳細】
+- 場所：室内/屋外/具体的な場所
+- 背景要素：家具/建物/自然/窓/ドア等
+- 背景との位置関係
+
+【重要な特徴】
+- 特に目立つ要素や特徴的な部分
+- 構図の特徴（クローズアップ/全身/遠景等）
+
+【忠実性チェックポイント】
+- 絶対に変更してはいけない要素を特定
+
+正確性を最重視し、推測を避けて見えるものだけを客観的に記述してください。構図とサイズ感も重要です。`
                                     },
                                     {
                                         type: "image_url",
@@ -665,49 +693,230 @@
                                 ]
                             }
                         ],
+                        max_tokens: 400
+                    }),
+                });
+
+                let detailedAnalysis = "a subject";
+                if (compositionResponse.ok) {
+                    const compositionResult = await compositionResponse.json();
+                    if (compositionResult.choices && compositionResult.choices[0]) {
+                        detailedAnalysis = compositionResult.choices[0].message.content.trim();
+                        console.log('STAGE 1 - Detailed analysis:', detailedAnalysis);
+                    }
+                } else {
+                    console.warn('Stage 1 failed, continuing...');
+                }
+
+                // === STAGE 2: 忠実性最適化プロンプト生成 ===
+                updateProgress(40, 'AI が ぬりえ用 設計を 最適化しています（段階2/3）...');
+                console.log('STAGE 2: Faithfulness optimization...');
+                
+                const optimizationResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `以下の詳細分析結果から、構図・サイズ・配置まで忠実なDALL-E 3用プロンプトを設計してください：
+
+【分析結果】
+${detailedAnalysis}
+
+【忠実性保証要件】
+1. 人物の性別・年齢・人数を絶対に変更しない
+2. 物体の種類・数量を絶対に変更しない  
+3. ポーズ・向き・姿勢を絶対に変更しない
+4. 体の見えている範囲を絶対に変更しない
+5. 被写体のサイズ感・画面占有率を保持
+6. 被写体の位置・配置を保持
+7. 背景要素の基本構成を保持
+8. 勝手な要素追加を絶対に禁止
+
+【出力形式】
+"A coloring book page showing [具体的で忠実な描写、構図・サイズ・配置を含む]"
+
+【特別注意事項】
+- 男性→女性、女性→男性の性別変更は絶対禁止
+- きゅうり→なす等の物体変更は絶対禁止
+- 野菜等に勝手に目や表情をつけることは絶対禁止
+- 手のみの写真で勝手に全身を追加することは絶対禁止
+- 人数や動物の数を勝手に変更することは絶対禁止
+- 被写体のサイズ感や位置を勝手に変更することは絶対禁止
+
+元画像の構図・サイズ・配置に最大限忠実でありながら、子ども向けぬりえに適した記述を作成してください。`
+                                    }
+                                ]
+                            }
+                        ],
                         max_tokens: 200
                     }),
                 });
 
-                let imageDescription = "a subject";
-                if (analysisResponse.ok) {
-                    const analysisResult = await analysisResponse.json();
-                    if (analysisResult.choices && analysisResult.choices[0]) {
-                        imageDescription = analysisResult.choices[0].message.content.trim();
-                        console.log('Image description:', imageDescription);
+                let optimizedDescription = detailedAnalysis;
+                if (optimizationResponse.ok) {
+                    const optimizationResult = await optimizationResponse.json();
+                    if (optimizationResult.choices && optimizationResult.choices[0]) {
+                        optimizedDescription = optimizationResult.choices[0].message.content.trim();
+                        console.log('STAGE 2 - Optimized description:', optimizedDescription);
                     }
+                } else {
+                    console.warn('Stage 2 failed, using Stage 1 result...');
                 }
 
-                updateProgress(50, 'かわいくて忠実な ぬりえを つくっています... ✨');
+                // === STAGE 3: 最終検証とプロンプト完成 ===
+                updateProgress(55, 'AI が 最終検証を しています（段階3/3）...');
+                console.log('STAGE 3: Final verification...');
+                
+                const verificationResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `以下のプロンプトに忠実性の問題がないか最終検証し、必要に応じて修正してください：
 
-                // 忠実性重視のプロンプト
-                const faithfulPrompt = `Create a coloring book page based on this analysis: "${imageDescription}"
+【現在のプロンプト】
+${optimizedDescription}
 
-CRITICAL REQUIREMENTS:
-🎯 PRESERVE EXACTLY:
-- Number and gender of people (do not change male to female or vice versa)
-- Number and type of objects 
-- Exact poses and orientations
-- Body parts visible (full body, upper body, etc.)
-- Basic composition and layout
+【検証項目】
+1. 性別の記述は正確か？（男性↔女性の混同なし）
+2. 人数・物体数の記述は正確か？
+3. ポーズ・向きの記述は具体的か？
+4. 余計な装飾（目や表情）の追加指示がないか？
+5. 体の見えている範囲は正確か？
+6. 被写体のサイズ感・位置は保持されているか？
+7. 構図の特徴は保持されているか？
+
+【問題があった場合の修正指示】
+- 曖昧な表現を具体的にする
+- 禁止事項を明確に追加する
+- 数量や性別を数字や明確な語で指定する
+- サイズ感や配置を明確に指定する
+
+【出力】
+修正が必要な場合：修正版プロンプト
+修正不要な場合：「検証完了：問題なし」
+
+目標：元画像の構図・サイズ・配置まで100%忠実なぬりえページの生成`
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 250
+                    }),
+                });
+
+                let finalDescription = optimizedDescription;
+                if (verificationResponse.ok) {
+                    const verificationResult = await verificationResponse.json();
+                    if (verificationResult.choices && verificationResult.choices[0]) {
+                        const verificationOutput = verificationResult.choices[0].message.content.trim();
+                        console.log('STAGE 3 - Verification result:', verificationOutput);
+                        
+                        if (!verificationOutput.includes('検証完了：問題なし')) {
+                            finalDescription = verificationOutput;
+                            console.log('STAGE 3 - Applied corrections');
+                        }
+                    }
+                } else {
+                    console.warn('Stage 3 failed, using Stage 2 result...');
+                }
+
+                // === 特別ケース対策 ===
+                const analysis = detailedAnalysis.toLowerCase();
+                let specialCasePrompt = null;
+
+                // パパと娘ケース
+                if ((analysis.includes('男性') && analysis.includes('女の子')) || 
+                    (analysis.includes('father') && analysis.includes('daughter')) ||
+                    (analysis.includes('パパ') && analysis.includes('娘'))) {
+                    specialCasePrompt = `CRITICAL: This must show exactly one adult man and one young girl child. Do not change the man to a woman. Do not change the girl to a boy. Keep exactly these two people with their correct genders and the same size relationship.`;
+                }
+                
+                // 野菜複数本ケース
+                else if (analysis.includes('きゅうり') && (analysis.includes('本') || analysis.includes('個'))) {
+                    const countMatch = analysis.match(/(\d+)本|(\d+)個/);
+                    const number = countMatch ? (countMatch[1] || countMatch[2]) : 'multiple';
+                    specialCasePrompt = `CRITICAL: Show exactly ${number} cucumber vegetables only. Do not change cucumbers to other vegetables. Do not add faces or eyes to the vegetables. Keep them as simple vegetable shapes with the same size and arrangement.`;
+                }
+                
+                // 手のみケース
+                else if ((analysis.includes('手') && (analysis.includes('のみ') || analysis.includes('だけ'))) ||
+                         (analysis.includes('hand') && !analysis.includes('full body'))) {
+                    specialCasePrompt = `CRITICAL: Show only the hand part visible in the original image. Do not add full body or person. Keep it as just a hand drawing with the same size and position.`;
+                }
+
+                updateProgress(70, 'かわいくて超忠実な ぬりえを つくっています... ✨');
+
+                // === 最終プロンプト構築 ===
+                let finalPrompt = `${finalDescription}
+
+CRITICAL FAITHFULNESS REQUIREMENTS:
+🎯 PRESERVE EXACTLY AS ANALYZED:
+- Number and gender of people (NEVER change male to female or vice versa)
+- Number and type of objects (NEVER change cucumber to eggplant, etc.)
+- Exact poses and orientations described in analysis
+- Body parts visible (full body, upper body, hands only, etc.)
+- Subject size and position in frame (large/medium/small, center/left/right)
+- Basic composition and layout from original image
+- Background elements and their relationship to subjects
 
 🚫 ABSOLUTELY FORBIDDEN:
-- Changing genders or ages
-- Changing object types or adding extra objects
-- Adding facial features to inanimate objects
-- Adding colors or patterns (pure black and white only)
-- Changing the number of subjects
+- Changing genders (男性→女性, 女性→男性)
+- Changing object types (きゅうり→なす, cat→dog, etc.)
+- Adding extra objects or characters not in original
+- Adding facial features to inanimate objects (no eyes on vegetables/food)
+- Changing poses, orientations, or viewing angles
+- Changing subject size or position in composition
+- Adding colors, patterns, or shading (pure black and white only)
+- Changing the number of subjects (people, animals, objects)
+- Altering the basic composition or framing
 
-✅ ALLOWED MODIFICATIONS:
-- Simplify details into basic shapes
-- Make expressions gentler and friendlier
-- Thicken outlines for easy coloring
-- Round sharp edges slightly
+✅ MINIMAL ALLOWED MODIFICATIONS:
+- Simplify complex details into basic geometric shapes
+- Make facial expressions slightly gentler (but keep same direction/mood)
+- Round very sharp edges for safety
+- Thicken outlines to 5-6px for easy coloring
+- Simplify clothing patterns (but keep basic style and type)
 
-STYLE: Pure black outlines (5-6px) on pure white background, simple enough for ages 3-6, kawaii cute style while maintaining faithfulness to original image.`;
+COMPOSITION REQUIREMENTS:
+📐 Maintain exact framing and composition of original
+📏 Preserve subject size relative to frame
+📍 Keep subject positioning (center/left/right/top/bottom)
+🏠 Maintain basic background elements and spatial relationships
 
-                console.log('Generating faithful coloring page...');
+STYLE REQUIREMENTS:
+🖤 Pure black outlines (5-6px thick) on pure white background
+👶 Simple enough for ages 3-6 to color with chunky crayons
+📖 Classic coloring book page style
+😊 Gentle, child-friendly expressions (maintain original mood)
+🎨 Minimal kawaii touches that don't alter core subject identity
 
+${specialCasePrompt ? '\n' + specialCasePrompt : ''}
+
+GOAL: Create a version so faithful that parents immediately recognize it as "their exact photo turned into a coloring page" with the same composition, size, and layout rather than "a different cute drawing inspired by their photo."`;
+
+                console.log('Generating ultra-faithful coloring page with composition preservation...');
+                console.log('Final prompt length:', finalPrompt.length);
+
+                // === DALL-E 3 生成 ===
                 const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
                     method: 'POST',
                     headers: {
@@ -716,7 +925,7 @@ STYLE: Pure black outlines (5-6px) on pure white background, simple enough for a
                     },
                     body: JSON.stringify({
                         model: "dall-e-3",
-                        prompt: faithfulPrompt,
+                        prompt: finalPrompt,
                         n: 1,
                         size: "1024x1024",
                         quality: "standard"
@@ -731,15 +940,15 @@ STYLE: Pure black outlines (5-6px) on pure white background, simple enough for a
                 const dalle3Result = await dalle3Response.json();
 
                 if (dalle3Result.data && dalle3Result.data.length > 0) {
-                    updateProgress(100, '忠実で かわいい ぬりえが できました！');
+                    updateProgress(100, '超忠実で かわいい ぬりえが できました！');
                     generatedImageUrl = dalle3Result.data[0].url;
-                    showResult(dalle3Result.data[0].url, 'DALL-E-3-Faithful', '📸 元の写真に忠実な ぬりえです！');
+                    showResult(dalle3Result.data[0].url, 'DALL-E-3-Ultra-Faithful', '🎯 元の写真に超忠実な ぬりえです（構図・サイズも保持）！');
                 } else {
                     throw new Error('No image generated');
                 }
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Complete faithful version error:', error);
                 
                 let errorMessage = error.message;
                 if (error.message.includes('401')) {
