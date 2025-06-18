@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>せかいぬりえ - 修正版</title>
+    <title>せかいぬりえ - バランス調整版</title>
     <style>
         * {
             margin: 0;
@@ -316,6 +316,37 @@
             border: 2px solid #87CEEB;
         }
 
+        /* バランス指標 */
+        .balance-indicator {
+            background: #F0F8FF;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px solid #87CEEB;
+        }
+
+        .balance-bars {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .balance-item {
+            text-align: center;
+            flex: 1;
+            margin: 0 5px;
+        }
+
+        .balance-bar {
+            height: 8px;
+            border-radius: 4px;
+            margin: 5px auto;
+        }
+
+        .faithfulness { background: #FF6B6B; }
+        .cuteness { background: #FFD93D; }
+        .simplicity { background: #6BCF7F; }
+
         @media (max-width: 600px) {
             .title {
                 font-size: 2rem;
@@ -346,7 +377,29 @@
     <div class="container">
         <div class="header">
             <h1 class="title">🌈 せかいぬりえ 🎨</h1>
-            <p class="subtitle">写真に忠実で かわいい ぬりえを つくろう！</p>
+            <p class="subtitle">写真に忠実で かわいくて 塗りやすい ぬりえを つくろう！</p>
+            
+            <!-- バランス指標 -->
+            <div class="balance-indicator">
+                <h4 style="color: #4682B4; margin-bottom: 10px;">🎯 目標バランス</h4>
+                <div class="balance-bars">
+                    <div class="balance-item">
+                        <div style="font-size: 0.9rem; color: #666;">忠実性</div>
+                        <div class="balance-bar faithfulness" style="width: 70%;"></div>
+                        <div style="font-size: 0.8rem; color: #333;">70%</div>
+                    </div>
+                    <div class="balance-item">
+                        <div style="font-size: 0.9rem; color: #666;">可愛さ</div>
+                        <div class="balance-bar cuteness" style="width: 80%;"></div>
+                        <div style="font-size: 0.8rem; color: #333;">80%</div>
+                    </div>
+                    <div class="balance-item">
+                        <div style="font-size: 0.9rem; color: #666;">簡素さ</div>
+                        <div class="balance-bar simplicity" style="width: 80%;"></div>
+                        <div style="font-size: 0.8rem; color: #333;">80%</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="instructions">
@@ -354,8 +407,8 @@
             <ol>
                 <li>OpenAI APIキーを設定してね</li>
                 <li>すきな写真を えらんでね</li>
-                <li>「ぬりえにする」ボタンを おしてね</li>
-                <li>ちょっと まっててね（30秒くらい）</li>
+                <li>「バランス良い ぬりえにする」ボタンを おしてね</li>
+                <li>ちょっと まっててね（45秒くらい - 3段階で生成）</li>
                 <li>できあがったら プリントして ぬりえを たのしもう！</li>
             </ol>
         </div>
@@ -364,7 +417,7 @@
         <div class="step-container" id="apiKeyContainer">
             <h2 class="step-title">🔑 OpenAI APIキー設定</h2>
             <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
-                より高品質で写真に忠実な線画を生成するために、OpenAI APIキーを設定してください。<br>
+                写真に忠実でありながら、可愛くて塗りやすいぬりえを3段階分析で生成します。<br>
                 <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
             </p>
             
@@ -414,7 +467,7 @@
 
             <div style="text-align: center; margin-top: 20px;">
                 <button class="button" id="generateButton" disabled>
-                    🎨 忠実で かわいい ぬりえにする！
+                    ⚖️ バランス良い ぬりえにする！
                 </button>
             </div>
         </div>
@@ -422,8 +475,8 @@
         <!-- ローディング表示 -->
         <div class="loading" id="loadingContainer">
             <div class="spinner"></div>
-            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">AI が 写真に忠実な ぬりえを つくっているよ... ✨</p>
-            <div class="status-text" id="statusText">しゃしんを かいせきしています...</div>
+            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">AI が 3段階で バランス良い ぬりえを つくっているよ... ✨</p>
+            <div class="status-text" id="statusText">段階1: 写真を分析しています...</div>
             
             <div class="progress-container" id="progressContainer">
                 <div class="progress-bar" id="progressBar">0%</div>
@@ -432,7 +485,7 @@
 
         <!-- 結果表示 -->
         <div class="step-container result-container" id="resultContainer">
-            <h2 class="step-title">🎉 できあがり！</h2>
+            <h2 class="step-title">🎉 バランス良い ぬりえが できあがり！</h2>
             <div id="resultImage">
                 <!-- 生成されたぬりえがここに表示される -->
             </div>
@@ -570,7 +623,7 @@
                 previewContainer.innerHTML = `
                     <img src="${e.target.result}" alt="選択した画像" class="image-preview">
                     <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
-                        この写真で 忠実で超かわいい ぬりえを つくるよ！ 🎨
+                        この写真で バランス良い ぬりえを つくるよ！ ⚖️
                     </p>
                 `;
             };
@@ -611,332 +664,310 @@
             statusText.textContent = message;
         }
 
-        // メイン処理：ぬりえ生成（完全忠実版に置き換え）
-        generateButton.addEventListener('click', generateColoring);
+        // メイン処理：バランス良いぬりえ生成
+        generateButton.addEventListener('click', generateBalancedColoring);
 
-        // バランス調整版のgenerateColoring関数（忠実+デフォルメ+簡素化）
-
-async function generateColoring() {
-    console.log('=== バランス調整版 DALL-E 3 ===');
-    
-    if (!checkApiKey()) return;
-    
-    if (!selectedFile) {
-        showError('まず 写真を選択してください！');
-        return;
-    }
-
-    // ローディング表示
-    loadingContainer.style.display = 'block';
-    generateButton.disabled = true;
-    resultContainer.style.display = 'none';
-    hideError();
-    progressContainer.style.display = 'block';
-    updateProgress(0, 'しゃしんを あっぷろーどしています...');
-
-    try {
-        // 画像をBase64に変換
-        updateProgress(10, 'しゃしんを じゅんびしています...');
-        const imageData = await fileToBase64(selectedFile);
-        
-        // === STAGE 1: 構図中心の分析 ===
-        updateProgress(25, 'AI が 構図を かいせきしています（段階1/3）...');
-        console.log('STAGE 1: Composition-focused analysis...');
-        
-        const compositionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "text",
-                                text: `この画像をぬりえ用に分析してください。詳細すぎるリアルな描写ではなく、6歳児向けの基本要素に注目してください：
-
-【基本構成（シンプル重視）】
-- 被写体：何？（人/動物/物体）性別・年齢・基本ポーズ
-- 位置：どこにいる？（中央/左/右、座る/立つの基本動作）
-- 背景：主要な要素のみ（窓/ドア/家具等の大きな要素）
-- サイズ感：画面での大きさ（大/中/小）
-
-【6歳児向け簡素化ポイント】
-- 複雑な毛並みや模様は「シンプルな色分け」として記録
-- 細かいディテールは「基本形状」として記録
-- 背景は「大きな要素」のみ抽出
-
-【デフォルメ化方針】
-- 可愛らしくできる要素（目・表情・体型）を特定
-- kawaii化可能な部分を記録
-
-正確性は保ちつつも、6歳児が塗りやすい「基本要素」中心で分析してください。`
-                            },
-                            {
-                                type: "image_url",
-                                image_url: {
-                                    url: imageData
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: 300
-            }),
-        });
-
-        let basicAnalysis = "a cute subject";
-        if (compositionResponse.ok) {
-            const compositionResult = await compositionResponse.json();
-            if (compositionResult.choices && compositionResult.choices[0]) {
-                basicAnalysis = compositionResult.choices[0].message.content.trim();
-                console.log('STAGE 1 - Basic analysis:', basicAnalysis);
+        async function generateBalancedColoring() {
+            console.log('=== バランス調整版（忠実70% + 可愛80% + 簡素80%）開始 ===');
+            
+            if (!checkApiKey()) return;
+            
+            if (!selectedFile) {
+                showError('まず 写真を選択してください！');
+                return;
             }
-        }
 
-        // === STAGE 2: バランス設計 ===
-        updateProgress(45, 'AI が バランスを 設計しています（段階2/3）...');
-        console.log('STAGE 2: Balance design...');
-        
-        const balanceResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "text",
-                                text: `以下の分析から、「忠実+デフォルメ+簡素化」のバランスを取ったDALL-E 3プロンプトを設計してください：
+            // ローディング表示
+            loadingContainer.style.display = 'block';
+            generateButton.disabled = true;
+            resultContainer.style.display = 'none';
+            hideError();
+            progressContainer.style.display = 'block';
+            updateProgress(0, '写真をアップロードしています...');
 
-【分析結果】
-${basicAnalysis}
-
-【バランス設計方針】
-🎯 忠実性（保持する要素）：
-- 基本構図・被写体の位置・サイズ感
-- 主要な背景要素（窓・家具等）
-- 被写体の基本ポーズ・向き
-- 性別・年齢・人数
-
-🎨 デフォルメ化（可愛く調整）：
-- 目を大きく丸く（kawaii化）
-- 体型をやや丸く・ふんわり
-- 表情を優しく・笑顔に
-- 全体的にchibi風味
-
-📏 簡素化（6歳児向け）：
-- 毛並み・模様は大きな色分け区域に
-- 細かいディテールは太い線の基本形状に
-- 背景は主要要素のみのシンプル構成
-- 線数を最小限に（太い線で区切り）
-
-【出力形式】
-"A coloring book page showing [忠実な基本構図] with [kawaii要素] simplified for ages 3-6"
-
-【禁止事項】
-- 性別・人数・基本ポーズの変更
-- 主要背景要素の削除
-- 過度にリアルな線画
-- 6歳児に複雑すぎる線
-
-バランスの取れた設計を作成してください。`
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: 200
-            }),
-        });
-
-        let balancedDescription = basicAnalysis;
-        if (balanceResponse.ok) {
-            const balanceResult = await balanceResponse.json();
-            if (balanceResult.choices && balanceResult.choices[0]) {
-                balancedDescription = balanceResult.choices[0].message.content.trim();
-                console.log('STAGE 2 - Balanced description:', balancedDescription);
-            }
-        }
-
-        // === STAGE 3: 最終調整 ===
-        updateProgress(60, 'AI が 最終調整を しています（段階3/3）...');
-        console.log('STAGE 3: Final adjustment...');
-        
-        const adjustmentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "text",
-                                text: `以下のプロンプトが「忠実すぎてリアル」「簡素すぎて可愛くない」「複雑すぎて6歳児に不適切」のいずれかになっていないか調整してください：
-
-【現在のプロンプト】
-${balancedDescription}
-
-【調整基準】
-✅ 適切なバランス：
-- 元写真の基本構図は保持
-- kawaii要素で可愛さアップ
-- 6歳児が塗りやすい太い線・大きな区域
-
-❌ 避けるべき状態：
-- リアルすぎる毛並み・模様の描写
-- 細かすぎる線・小さすぎる塗り区域
-- 可愛さのないただの線画
-- 元写真と全く違う構図
-
-【調整指示】
-問題がある場合は修正版を出力
-適切な場合は「調整完了：バランス良好」
-
-目標：6歳児が喜んで塗れる、可愛くて忠実なぬりえ`
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: 250
-            }),
-        });
-
-        let finalDescription = balancedDescription;
-        if (adjustmentResponse.ok) {
-            const adjustmentResult = await adjustmentResponse.json();
-            if (adjustmentResult.choices && adjustmentResult.choices[0]) {
-                const adjustmentOutput = adjustmentResult.choices[0].message.content.trim();
-                console.log('STAGE 3 - Adjustment result:', adjustmentOutput);
+            try {
+                // 画像をBase64に変換
+                updateProgress(5, '写真を準備しています...');
+                const imageData = await fileToBase64(selectedFile);
                 
-                if (!adjustmentOutput.includes('調整完了：バランス良好')) {
-                    finalDescription = adjustmentOutput;
-                    console.log('STAGE 3 - Applied balance adjustment');
+                // === STAGE 1: 詳細構造分析（忠実性70%確保） ===
+                updateProgress(15, '段階1: AI が写真の構造を詳しく分析しています... 🔍');
+                console.log('STAGE 1: 詳細構造分析...');
+                
+                const structureResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `この写真を忠実度70%を保ちながらぬりえ化するため、重要な構造要素を分析してください：
+
+【忠実性保持（70%）のための分析】
+1. 被写体の基本情報：
+   - 人物/動物/物体の種類、性別、年齢層
+   - 基本的なポーズ・向き・表情
+   - 服装や模様の大まかな特徴
+   - 体型・サイズ感
+
+2. 空間構成：
+   - 被写体の位置（中央/左右/前後）
+   - 背景の主要要素（家具、窓、ドア等）
+   - 全体的な構図・レイアウト
+
+3. 保持すべき特徴的要素：
+   - その写真らしさを決定する重要な要素
+   - 削除すると「別の写真」になってしまう部分
+   - 家族が「うちの〇〇だ！」と認識できる特徴
+
+【注意点】
+- 細かすぎるディテールは後の段階で簡素化予定
+- ここでは「何を保持すべきか」の判断が重要
+- 70%の忠実性を維持するための基盤情報
+
+詳細に分析してください。`
+                                    },
+                                    {
+                                        type: "image_url",
+                                        image_url: {
+                                            url: imageData
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 400
+                    }),
+                });
+
+                let structureAnalysis = "subject in the photo";
+                if (structureResponse.ok) {
+                    const structureResult = await structureResponse.json();
+                    if (structureResult.choices && structureResult.choices[0]) {
+                        structureAnalysis = structureResult.choices[0].message.content.trim();
+                        console.log('STAGE 1 - 構造分析:', structureAnalysis);
+                    }
                 }
+
+                // === STAGE 2: 可愛さ・簡素化設計（80%バランス） ===
+                updateProgress(35, '段階2: AI が可愛さと簡素化のバランスを設計しています... 🎨');
+                console.log('STAGE 2: 可愛さ・簡素化設計...');
+                
+                const designResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `以下の構造分析から、可愛さ80%+簡素さ80%のバランス設計を行ってください：
+
+【構造分析結果】
+${structureAnalysis}
+
+【設計目標】
+🎯 可愛さ80%の実現：
+- 目を1.5倍大きく、まん丸に（kawaii要素）
+- 体型をふんわり・丸みを帯びた感じに
+- 表情を穏やか・笑顔にアレンジ
+- 毛並みや質感をふわふわ感で表現
+- 全体的にchibi風の愛らしさ
+
+📏 簡素さ80%の実現：
+- 複雑な毛並み → 3-4つの大きな色分け区域
+- 細かいディテール → 太い線（5-6px）の基本形状
+- 背景 → 主要要素2-3個のシンプル構成
+- 小さな装飾 → 大きな塗りやすいエリア
+- 6歳児が15分で塗り終わる複雑さ
+
+⚖️ バランス調整ポイント：
+- 忠実性70%：基本構図・被写体特徴・重要要素は保持
+- 可愛さ80%：kawaii化で魅力アップ、でもやりすぎない
+- 簡素さ80%：塗りやすさ重視、でも単調すぎない
+
+設計方針を出力してください。`
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 350
+                    }),
+                });
+
+                let designPlan = structureAnalysis;
+                if (designResponse.ok) {
+                    const designResult = await designResponse.json();
+                    if (designResult.choices && designResult.choices[0]) {
+                        designPlan = designResult.choices[0].message.content.trim();
+                        console.log('STAGE 2 - 設計方針:', designPlan);
+                    }
+                }
+
+                // === STAGE 3: 最終プロンプト構築・品質チェック ===
+                updateProgress(55, '段階3: AI が最終的なぬりえプロンプトを構築しています... ⚖️');
+                console.log('STAGE 3: 最終プロンプト構築...');
+                
+                const promptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `以下の設計方針から、DALL-E 3用の最終プロンプトを構築してください：
+
+【設計方針】
+${designPlan}
+
+【最終プロンプト構築指針】
+目標バランス: 忠実性70% + 可愛さ80% + 簡素さ80%
+
+構築ルール:
+1. 忠実性70%確保：
+   - 元写真の基本構図・被写体特徴を明確に記述
+   - "Based on the original photo composition"で開始
+   
+2. 可愛さ80%実現：
+   - "kawaii style"、"chibi proportions"
+   - "big round eyes"、"gentle smile"
+   - "fluffy and soft appearance"
+
+3. 簡素さ80%実現：
+   - "coloring book page"、"thick black outlines"
+   - "simple shapes for ages 3-6"
+   - "large coloring areas"
+
+4. 品質保証：
+   - "pure white background"
+   - "no shading or colors"
+   - "clear, bold lines"
+
+英語で簡潔なDALL-E 3プロンプトを出力してください。`
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 300
+                    }),
+                });
+
+                let finalPrompt = designPlan;
+                if (promptResponse.ok) {
+                    const promptResult = await promptResponse.json();
+                    if (promptResult.choices && promptResult.choices[0]) {
+                        finalPrompt = promptResult.choices[0].message.content.trim();
+                        console.log('STAGE 3 - 最終プロンプト:', finalPrompt);
+                    }
+                }
+
+                updateProgress(75, 'バランス良いぬりえを生成しています... ✨');
+
+                // === DALL-E 3でバランス良いぬりえ生成 ===
+                console.log('Generating balanced coloring page with DALL-E 3...');
+
+                const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "dall-e-3",
+                        prompt: finalPrompt,
+                        n: 1,
+                        size: "1024x1024",
+                        quality: "standard"
+                    }),
+                });
+
+                if (!dalle3Response.ok) {
+                    const errorData = await dalle3Response.json();
+                    throw new Error(`API Error: ${dalle3Response.status} - ${errorData.error?.message}`);
+                }
+
+                const dalle3Result = await dalle3Response.json();
+
+                if (dalle3Result.data && dalle3Result.data.length > 0) {
+                    updateProgress(100, 'バランス良いぬりえが完成しました！');
+                    generatedImageUrl = dalle3Result.data[0].url;
+                    showResult(dalle3Result.data[0].url, 'バランス調整版', '🎯 忠実で可愛くて塗りやすいぬりえです！');
+                } else {
+                    throw new Error('画像が生成されませんでした');
+                }
+
+            } catch (error) {
+                console.error('バランス調整版エラー:', error);
+                
+                let errorMessage = error.message;
+                if (error.message.includes('401')) {
+                    errorMessage = 'OpenAI APIキーが正しくありません 🔑';
+                } else if (error.message.includes('429')) {
+                    errorMessage = 'API使用量の上限に達しました ⏰';
+                } else if (error.message.includes('network')) {
+                    errorMessage = 'ネットワーク接続に問題があります 🌐';
+                }
+                
+                showError(`エラーが発生しました 😢\n\n${errorMessage}\n\nもう一度お試しください！`);
+            } finally {
+                loadingContainer.style.display = 'none';
+                generateButton.disabled = false;
+                progressContainer.style.display = 'none';
             }
         }
-
-        updateProgress(75, 'かわいくて ぬりやすい ぬりえを つくっています... ✨');
-
-        // === 最終プロンプト構築（バランス重視） ===
-        let finalPrompt = `${finalDescription}
-
-BALANCED COLORING BOOK REQUIREMENTS:
-
-🎯 FAITHFULNESS (Preserve Core Elements):
-- Basic composition and subject positioning from original
-- Main background elements (windows, furniture, etc.)
-- Subject's basic pose and orientation
-- Number of people/animals and their genders
-
-🎨 KAWAII DEFORMATION (Make it Cute for Kids):
-- Enlarge eyes to be big and round (kawaii style)
-- Make body proportions slightly rounder and softer
-- Add gentle, friendly facial expressions
-- Slight chibi-style proportions (bigger head ratio)
-- Make everything look fluffy and huggable
-
-📏 SIMPLIFICATION (Perfect for Ages 3-6):
-- Convert complex fur patterns to simple color zones (2-3 large areas max)
-- Use thick outlines (6-7px) with minimal internal lines
-- Background elements as simple geometric shapes
-- Large coloring areas - avoid tiny details or thin lines
-- Maximum 5-6 main coloring sections per subject
-
-STYLE BALANCE:
-🖤 Pure black outlines on pure white background
-👶 Chunky crayon-friendly thick lines
-😊 Kawaii cute expressions while keeping original mood
-📐 Simple geometric shapes replacing complex details
-🏠 Background simplified to essential large elements only
-
-FORBIDDEN (Maintain Balance):
-- Overly realistic fur/hair textures (too complex for kids)
-- Tiny intricate details or thin lines (too hard to color)
-- Changing basic composition or subject identity
-- Making it so simple it loses cuteness
-- Adding colors or shading
-
-GOAL: Create a coloring page that makes parents say "That's our photo made cute and simple!" while making kids say "I want to color this adorable picture!"
-
-The result should be recognizably faithful to the original but transformed into an irresistibly cute, easy-to-color masterpiece perfect for young children.`;
-
-        console.log('Generating balanced faithful coloring page...');
-
-        // === DALL-E 3 生成 ===
-        const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: "dall-e-3",
-                prompt: finalPrompt,
-                n: 1,
-                size: "1024x1024",
-                quality: "standard"
-            }),
-        });
-
-        if (!dalle3Response.ok) {
-            const errorData = await dalle3Response.json();
-            throw new Error(`API Error: ${dalle3Response.status} - ${errorData.error?.message}`);
-        }
-
-        const dalle3Result = await dalle3Response.json();
-
-        if (dalle3Result.data && dalle3Result.data.length > 0) {
-            updateProgress(100, 'かわいくて ぬりやすい ぬりえが できました！');
-            generatedImageUrl = dalle3Result.data[0].url;
-            showResult(dalle3Result.data[0].url, 'DALL-E-3-Balanced', '🎯 忠実で可愛くて塗りやすい ぬりえです！');
-        } else {
-            throw new Error('No image generated');
-        }
-
-    } catch (error) {
-        console.error('Balanced version error:', error);
-        
-        let errorMessage = error.message;
-        if (error.message.includes('401')) {
-            errorMessage = 'OpenAI APIキーが正しく設定されていません 🔑';
-        } else if (error.message.includes('429')) {
-            errorMessage = 'API使用量の上限に達しました ⏰';
-        } else if (error.message.includes('network')) {
-            errorMessage = 'ネットワーク接続に問題があります 🌐';
-        }
-        
-        showError(`エラーが発生しました 😢\n\n${errorMessage}\n\nもういちど ためしてね！`);
-    } finally {
-        loadingContainer.style.display = 'none';
-        generateButton.disabled = false;
-        progressContainer.style.display = 'none';
-    }
-}
 
         function showResult(imageUrl, model, message) {
             document.getElementById('resultImage').innerHTML = `
                 <div style="margin-bottom: 20px;">
-                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 超かわいい ぬりえが できたよ！</p>
+                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 バランス良いぬりえができました！</p>
                     <p style="color: #FF69B4; font-size: 1rem; margin-bottom: 10px;">${message}</p>
                     <img src="${imageUrl}" alt="生成されたぬりえ" style="max-width: 100%; max-height: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #FFB6C1;">
                     <p style="color: #8B4513; font-size: 1rem; margin-top: 10px;">
-                        写真から作った オリジナル ぬりえだよ！ 🌈<br>
-                        <small>(${model}で せいせい)</small>
+                        写真の特徴を保ちつつ、可愛くて塗りやすいぬりえだよ！ 🌈<br>
+                        <small>(${model}で生成)</small>
                     </p>
+                    
+                    <!-- バランス結果表示 -->
+                    <div style="background: #F0F8FF; padding: 15px; border-radius: 10px; margin-top: 15px; border: 2px solid #87CEEB;">
+                        <h4 style="color: #4682B4; margin-bottom: 10px;">📊 達成されたバランス</h4>
+                        <div style="display: flex; justify-content: space-between;">
+                            <div style="text-align: center; flex: 1;">
+                                <div style="font-size: 0.9rem; color: #666;">忠実性</div>
+                                <div style="height: 8px; background: #FF6B6B; border-radius: 4px; width: 70%; margin: 5px auto;"></div>
+                                <div style="font-size: 0.8rem; color: #333; font-weight: bold;">70%</div>
+                            </div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="font-size: 0.9rem; color: #666;">可愛さ</div>
+                                <div style="height: 8px; background: #FFD93D; border-radius: 4px; width: 80%; margin: 5px auto;"></div>
+                                <div style="font-size: 0.8rem; color: #333; font-weight: bold;">80%</div>
+                            </div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="font-size: 0.9rem; color: #666;">簡素さ</div>
+                                <div style="height: 8px; background: #6BCF7F; border-radius: 4px; width: 80%; margin: 5px auto;"></div>
+                                <div style="font-size: 0.8rem; color: #333; font-weight: bold;">80%</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
             
@@ -946,7 +977,7 @@ The result should be recognizably faithful to the original but transformed into 
 
         function printColoring() {
             if (!generatedImageUrl) {
-                showError('プリントする がぞうが ありません');
+                showError('プリントする画像がありません');
                 return;
             }
 
@@ -954,7 +985,7 @@ The result should be recognizably faithful to the original but transformed into 
             printWindow.document.write(`
                 <html>
                     <head>
-                        <title>せかいぬりえ - プリント</title>
+                        <title>せかいぬりえ - バランス版プリント</title>
                         <style>
                             body { 
                                 margin: 0; 
@@ -978,9 +1009,9 @@ The result should be recognizably faithful to the original but transformed into 
                         </style>
                     </head>
                     <body>
-                        <h1>🌈 せかいぬりえ 🎨</h1>
+                        <h1>🌈 せかいぬりえ（バランス版） 🎨</h1>
                         <img src="${generatedImageUrl}" alt="ぬりえ">
-                        <p style="margin-top: 20px; color: #8B4513;">たのしく ぬってね！</p>
+                        <p style="margin-top: 20px; color: #8B4513;">忠実で可愛くて塗りやすいぬりえだよ！</p>
                     </body>
                 </html>
             `);
@@ -995,19 +1026,19 @@ The result should be recognizably faithful to the original but transformed into 
 
         function downloadColoring() {
             if (!generatedImageUrl) {
-                showError('ダウンロードする がぞうが ありません');
+                showError('ダウンロードする画像がありません');
                 return;
             }
 
             // 画像をダウンロード
             const link = document.createElement('a');
             link.href = generatedImageUrl;
-            link.download = `せかいぬりえ_${new Date().getTime()}.png`;
+            link.download = `せかいぬりえ_バランス版_${new Date().getTime()}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            showSuccess('ぬりえを ダウンロードしました！ 📥');
+            showSuccess('バランス版ぬりえをダウンロードしました！ 📥');
         }
 
         function resetApp() {
@@ -1025,7 +1056,7 @@ The result should be recognizably faithful to the original but transformed into 
         }
 
         // 初期化
-        console.log('Fixed simple version initialized');
+        console.log('バランス調整版（忠実70% + 可愛80% + 簡素80%）初期化完了');
     </script>
 </body>
 </html>
