@@ -355,7 +355,7 @@
                 <li>OpenAI APIキーを設定してね</li>
                 <li>すきな写真を えらんでね</li>
                 <li>「ぬりえにする」ボタンを おしてね</li>
-                <li>ちょっと まっててね（30秒くらい）</li>
+                <li>ちょっと まっててね（45秒くらい）</li>
                 <li>できあがったら プリントして ぬりえを たのしもう！</li>
             </ol>
         </div>
@@ -611,11 +611,11 @@
             statusText.textContent = message;
         }
 
-        // メイン処理：ぬりえ生成（忠実度重視版）
-        generateButton.addEventListener('click', generateColoring);
+        // メイン処理：忠実性重視ぬりえ生成
+        generateButton.addEventListener('click', generateFaithfulColoring);
 
-        async function generateColoring() {
-            console.log('=== 忠実度重視版 DALL-E 3 ===');
+        async function generateFaithfulColoring() {
+            console.log('=== 忠実性重視改良版 ===');
             
             if (!checkApiKey()) return;
             
@@ -637,9 +637,10 @@
                 updateProgress(10, 'しゃしんを じゅんびしています...');
                 const imageData = await fileToBase64(selectedFile);
                 
-                updateProgress(30, 'AI が しゃしんを 詳しく かいせきしています...');
-
-                // 詳細な画像解析
+                // === STAGE 1: 写真の詳細特徴分析 ===
+                updateProgress(25, 'しゃしんを くわしく かいせきしています... 🔍');
+                console.log('STAGE 1: 詳細特徴分析（忠実性最優先）...');
+                
                 const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
@@ -654,7 +655,36 @@
                                 content: [
                                     {
                                         type: "text",
-                                        text: "この画像を詳細に分析して、ぬりえ作成用の説明を作ってください。以下の点を正確に記述してください：\n\n1. 人物：何人？性別・年齢は？\n2. 動物：何匹？種類・ポーズは？\n3. 物体：何個？種類・配置は？\n4. 全体の構図・向き・姿勢\n\n正確性を最重視して、見えるものだけを客観的に記述してください。"
+                                        text: `この写真をそのまま認識できる程度に忠実なぬりえにするため、写真の特徴を詳細に分析してください：
+
+【忠実性最優先分析】
+1. 被写体の具体的特徴：
+   - 動物/人物の種類、品種、年齢
+   - 顔の形、目の形・位置・大きさ（実際のサイズ感）
+   - 耳の形・向き・位置
+   - 体型・姿勢・座り方/立ち方
+   - 毛色・模様の具体的配置
+
+2. 顔の詳細：
+   - 鼻の位置・形
+   - 口の位置・形・表情
+   - 目と鼻と口の相対的位置関係
+   - 顔の輪郭・頬の形
+
+3. 体の特徴：
+   - 胴体の形・太さ
+   - 足の位置・形
+   - しっぽの形・位置・向き
+   - 全体的なプロポーション
+
+4. 背景の正確な記録：
+   - 床の材質・模様
+   - 壁・家具の位置
+   - 光の当たり方・影の位置
+
+【目標】
+この分析結果から、元写真を見た人が「確実に同じ対象だ」と認識できる線画を作成するため。
+可愛さよりも「正確性」を重視。`
                                     },
                                     {
                                         type: "image_url",
@@ -665,49 +695,197 @@
                                 ]
                             }
                         ],
-                        max_tokens: 200
+                        max_tokens: 400
                     }),
                 });
 
-                let imageDescription = "a subject";
+                let detailedAnalysis = "a subject in the photo";
                 if (analysisResponse.ok) {
                     const analysisResult = await analysisResponse.json();
                     if (analysisResult.choices && analysisResult.choices[0]) {
-                        imageDescription = analysisResult.choices[0].message.content.trim();
-                        console.log('Image description:', imageDescription);
+                        detailedAnalysis = analysisResult.choices[0].message.content.trim();
+                        console.log('STAGE 1 - 詳細分析:', detailedAnalysis);
                     }
                 }
 
-                updateProgress(50, 'かわいくて忠実な ぬりえを つくっています... ✨');
+                // === STAGE 2: 忠実性保持設計 ===
+                updateProgress(45, 'ぬりえの せっけいを しています... 📐');
+                console.log('STAGE 2: 忠実性保持設計...');
+                
+                const designResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `以下の詳細分析から、忠実性85%を保ちつつ、適度な簡素化を行う設計をしてください：
 
-                // 忠実性重視のプロンプト
-                const faithfulPrompt = `Create a coloring book page based on this analysis: "${imageDescription}"
+【詳細分析結果】
+${detailedAnalysis}
 
-CRITICAL REQUIREMENTS:
-🎯 PRESERVE EXACTLY:
-- Number and gender of people (do not change male to female or vice versa)
-- Number and type of objects 
-- Exact poses and orientations
-- Body parts visible (full body, upper body, etc.)
-- Basic composition and layout
+【忠実性85%の設計方針】
+🎯 絶対に保持する要素：
+- 顔の形、目・鼻・口の正確な位置関係
+- 耳の実際の形・向き・大きさ
+- 体型・姿勢・座り方の正確な再現
+- 毛色・模様の実際の配置パターン
+- 背景要素の正確な位置・形
 
-🚫 ABSOLUTELY FORBIDDEN:
-- Changing genders or ages
-- Changing object types or adding extra objects
-- Adding facial features to inanimate objects
-- Adding colors or patterns (pure black and white only)
-- Changing the number of subjects
+📏 適度な簡素化（線画化）：
+- 毛の質感 → 3-4つの明確な色分け境界線
+- 細かい模様 → 大きな区域の境界線
+- 影・光 → シンプルな輪郭線のみ
+- 背景の細部 → 主要な形状のアウトライン
 
-✅ ALLOWED MODIFICATIONS:
-- Simplify details into basic shapes
-- Make expressions gentler and friendlier
-- Thicken outlines for easy coloring
-- Round sharp edges slightly
+❌ 絶対に変更しない：
+- 基本的なプロポーション
+- 顔のパーツ配置
+- 特徴的な毛色パターン
+- 体の向き・姿勢
+- 全体的な構図
 
-STYLE: Pure black outlines (5-6px) on pure white background, simple enough for ages 3-6, kawaii cute style while maintaining faithfulness to original image.`;
+【簡素化ルール】
+- 線の太さを統一（coloring book style）
+- 塗りつぶし可能な明確な区域作成
+- でも元の特徴は必ず保持
 
-                console.log('Generating faithful coloring page...');
+忠実性最優先で設計方針を出力してください。`
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 350
+                    }),
+                });
 
+                let designPlan = detailedAnalysis;
+                if (designResponse.ok) {
+                    const designResult = await designResponse.json();
+                    if (designResult.choices && designResult.choices[0]) {
+                        designPlan = designResult.choices[0].message.content.trim();
+                        console.log('STAGE 2 - 設計方針:', designPlan);
+                    }
+                }
+
+                // === STAGE 3: 最終プロンプト構築 ===
+                updateProgress(65, 'さいごの ちょうせいを しています... 🎯');
+                console.log('STAGE 3: 最終プロンプト構築...');
+                
+                const promptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `以下の設計方針から、忠実性重視のDALL-E 3プロンプトを構築してください：
+
+【設計方針】
+${designPlan}
+
+【最終プロンプト構築（忠実性最優先）】
+目標: 元写真と同じ対象だと確実に認識できる線画
+
+必須要素:
+1. 正確性の確保：
+   - "Exact same pose and position as in the photo"
+   - "Same facial features and proportions"
+   - "Identical body shape and posture"
+   
+2. 線画品質：
+   - "Clean coloring book page"
+   - "Thick black outlines only"
+   - "Pure white background"
+   - "No colors, no shading, no textures"
+
+3. 不要要素の除外：
+   - "No color palettes"
+   - "No additional decorative elements"
+   - "No cartoon exaggeration"
+   - "Simple line art only"
+
+4. 品質指定：
+   - "Professional coloring book style"
+   - "Clear defined areas for coloring"
+   - "Age-appropriate for children"
+
+【禁止事項】
+- カラーパレットやその他の装飾要素
+- 過度な可愛らしさの追加
+- 元の特徴の大幅な変更
+
+元写真に忠実で、純粋な線画のみのプロンプトを英語で出力してください。`
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 250
+                    }),
+                });
+
+                let finalPrompt = designPlan;
+                if (promptResponse.ok) {
+                    const promptResult = await promptResponse.json();
+                    if (promptResult.choices && promptResult.choices[0]) {
+                        finalPrompt = promptResult.choices[0].message.content.trim();
+                        console.log('STAGE 3 - 最終プロンプト:', finalPrompt);
+                    }
+                }
+
+                updateProgress(75, 'かわいくて ぬりやすい ぬりえを つくっています... ✨');
+
+                // === 忠実性重視のDALL-E 3プロンプト強化 ===
+                const enhancedPrompt = `${finalPrompt}
+
+CRITICAL REQUIREMENTS FOR FAITHFUL COLORING BOOK:
+
+🎯 MAXIMUM FAITHFULNESS TO ORIGINAL PHOTO:
+- Preserve exact same pose, position, and orientation as photo
+- Maintain actual facial features and proportions (no cartoon enlargement)
+- Keep real body shape, posture, and size relationships
+- Preserve authentic fur/hair patterns and markings exactly as shown
+- Maintain accurate background elements in same positions
+
+📏 COLORING BOOK SIMPLIFICATION ONLY:
+- Convert photo to clean black line art on pure white background
+- Use thick, clear outlines suitable for coloring
+- Simplify textures into colorable regions while keeping shapes accurate
+- Remove photo details like shadows/highlights but keep all structural elements
+- Create clear boundaries between different colored areas
+
+❌ STRICTLY FORBIDDEN:
+- NO color palettes, decorative borders, or additional elements
+- NO cartoon/kawaii exaggeration of features (especially eyes)
+- NO changing facial expressions or body proportions  
+- NO adding cute elements not present in original photo
+- NO backgrounds or elements not in the original image
+
+✅ MUST ACHIEVE:
+- Anyone seeing this coloring page should immediately recognize it as the same subject from the photo
+- Professional coloring book quality with clean, bold lines
+- Age-appropriate for children but maintaining photographic accuracy
+- Pure line art only - absolutely no colors, shading, or decorative elements
+
+GOAL: Create a line drawing so faithful to the original that family members would say "That's definitely our [subject]!" while being perfectly suitable for coloring.`;
+
+                console.log('Generating faithful coloring page with enhanced DALL-E 3...');
+
+                // === DALL-E 3で忠実性重視の線画生成 ===
                 const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
                     method: 'POST',
                     headers: {
@@ -716,10 +894,10 @@ STYLE: Pure black outlines (5-6px) on pure white background, simple enough for a
                     },
                     body: JSON.stringify({
                         model: "dall-e-3",
-                        prompt: faithfulPrompt,
+                        prompt: enhancedPrompt,
                         n: 1,
                         size: "1024x1024",
-                        quality: "standard"
+                        quality: "hd"
                     }),
                 });
 
@@ -731,15 +909,15 @@ STYLE: Pure black outlines (5-6px) on pure white background, simple enough for a
                 const dalle3Result = await dalle3Response.json();
 
                 if (dalle3Result.data && dalle3Result.data.length > 0) {
-                    updateProgress(100, '忠実で かわいい ぬりえが できました！');
+                    updateProgress(100, 'かわいくて ぬりやすい ぬりえが できました！');
                     generatedImageUrl = dalle3Result.data[0].url;
-                    showResult(dalle3Result.data[0].url, 'DALL-E-3-Faithful', '📸 元の写真に忠実な ぬりえです！');
+                    showResult(dalle3Result.data[0].url, 'DALL-E-3-忠実版', '🎯 写真に忠実で可愛いぬりえです！');
                 } else {
                     throw new Error('No image generated');
                 }
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('忠実性重視版エラー:', error);
                 
                 let errorMessage = error.message;
                 if (error.message.includes('401')) {
@@ -856,7 +1034,7 @@ STYLE: Pure black outlines (5-6px) on pure white background, simple enough for a
         }
 
         // 初期化
-        console.log('Fixed simple version initialized');
+        console.log('忠実性重視改良版初期化完了');
     </script>
 </body>
 </html>
