@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>せかいぬりえ - Replicate専用版</title>
+    <title>せかいぬりえ - HuggingFace Spaces版</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -49,106 +49,99 @@
             margin-bottom: 20px;
         }
 
-        .step-container {
+        .info-box {
+            background: #E6F3FF;
+            border: 3px solid #87CEEB;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #4682B4;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .space-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .space-button {
+            background: linear-gradient(45deg, #9370DB, #BA55D3);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            font-size: 1rem;
+            min-width: 180px;
+        }
+
+        .space-button.active {
+            background: linear-gradient(45deg, #FF69B4, #FFB6C1);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4);
+        }
+
+        .space-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(147, 112, 219, 0.4);
+        }
+
+        .space-container {
             background: white;
             border-radius: 20px;
-            padding: 30px;
+            padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 8px 32px rgba(255, 105, 180, 0.3);
             border: 4px solid #FFB6C1;
-        }
-
-        .step-title {
-            font-size: 1.5rem;
-            color: #FF69B4;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .upload-area {
-            border: 4px dashed #FFB6C1;
-            border-radius: 15px;
-            padding: 40px;
-            text-align: center;
-            background: #FFF8DC;
-            cursor: pointer;
-            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
 
-        .upload-area:hover {
-            border-color: #FF69B4;
-            background: #FFE4E1;
-            transform: scale(1.02);
-        }
-
-        .upload-area.dragover {
-            border-color: #FF1493;
-            background: #FFB6C1;
-        }
-
-        .upload-icon {
-            font-size: 4rem;
+        .space-title {
+            font-size: 1.5rem;
             color: #FF69B4;
             margin-bottom: 15px;
-            animation: float 3s ease-in-out infinite;
+            text-align: center;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .upload-text {
-            font-size: 1.2rem;
+        .space-description {
             color: #8B4513;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.6;
         }
 
-        .file-input {
-            display: none;
-        }
-
-        .image-preview {
-            max-width: 100%;
-            max-height: 300px;
+        .space-iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
             border-radius: 15px;
-            margin: 20px 0;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
-        .button {
-            background: linear-gradient(45deg, #FF69B4, #FFB6C1);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4);
-            transition: all 0.3s ease;
-            font-family: inherit;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(255, 105, 180, 0.6);
-        }
-
-        .button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 30px;
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            z-index: 10;
         }
 
         .spinner {
@@ -158,7 +151,7 @@
             border-top: 5px solid #FF69B4;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin-bottom: 20px;
         }
 
         @keyframes spin {
@@ -166,66 +159,8 @@
             100% { transform: rotate(360deg); }
         }
 
-        .progress-container {
-            width: 100%;
-            background-color: #FFE4E1;
-            border-radius: 25px;
-            padding: 3px;
-            margin: 20px 0;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 20px;
-            background: linear-gradient(45deg, #FF69B4, #FFB6C1);
-            border-radius: 25px;
-            transition: width 0.3s ease;
-            text-align: center;
-            line-height: 20px;
-            color: white;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .result-container {
-            display: none;
-            text-align: center;
-        }
-
-        .print-button {
-            background: linear-gradient(45deg, #32CD32, #98FB98);
-            margin-top: 20px;
-        }
-
-        .download-button {
-            background: linear-gradient(45deg, #4169E1, #87CEEB);
-            margin-top: 10px;
-            margin-left: 10px;
-        }
-
-        .error-message {
-            background: #FFE4E6;
-            color: #D8000C;
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #FFB6C1;
-            margin: 10px 0;
-            display: none;
-        }
-
-        .success-message {
-            background: #E6FFE6;
-            color: #006400;
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #90EE90;
-            margin: 10px 0;
-            display: none;
-        }
-
         .instructions {
-            background: #E6F3FF;
+            background: #F0F8FF;
             padding: 20px;
             border-radius: 15px;
             margin-bottom: 20px;
@@ -249,105 +184,71 @@
             margin-bottom: 8px;
         }
 
-        .status-text {
-            font-size: 1.1rem;
-            color: #FF69B4;
-            margin-top: 10px;
-        }
-
-        .api-key-input {
-            width: 70%;
-            padding: 12px;
-            border: 3px solid #FFB6C1;
-            border-radius: 10px;
-            font-size: 1rem;
-            margin-right: 10px;
-            font-family: monospace;
-        }
-
-        .api-key-button {
-            background: linear-gradient(45deg, #32CD32, #98FB98);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: inherit;
-        }
-
-        .api-status {
-            padding: 10px;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: none;
-            font-weight: bold;
-        }
-
-        .api-status.success {
-            background: #E6FFE6;
-            color: #006400;
-            border: 2px solid #90EE90;
-        }
-
-        .api-status.error {
-            background: #FFE4E6;
-            color: #D8000C;
-            border: 2px solid #FFB6C1;
-        }
-
-        .api-help {
-            margin-top: 15px;
-        }
-
-        .api-help summary {
-            color: #FF69B4;
-            cursor: pointer;
-            font-weight: bold;
-            padding: 5px;
-        }
-
-        .api-help-content {
-            margin-top: 10px;
-            padding: 15px;
-            background: #F0F8FF;
-            border-radius: 10px;
-            border: 2px solid #87CEEB;
-        }
-
-        .comparison-container {
-            display: flex;
+        .space-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 20px;
+            margin-bottom: 30px;
         }
 
-        .comparison-item {
-            text-align: center;
-            flex: 1;
-            min-width: 200px;
+        .space-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            border: 3px solid #FFB6C1;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
 
-        .comparison-item h4 {
+        .space-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(255, 105, 180, 0.3);
+        }
+
+        .space-card h4 {
             color: #FF69B4;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .space-card p {
+            color: #8B4513;
+            line-height: 1.5;
             margin-bottom: 10px;
         }
 
-        .info-box {
-            background: #F0F8FF;
-            border: 3px solid #87CEEB;
+        .space-card .features {
+            list-style: none;
+            padding: 0;
+        }
+
+        .space-card .features li {
+            color: #2F4F4F;
+            margin-bottom: 5px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .space-card .features li:before {
+            content: "✨";
+            position: absolute;
+            left: 0;
+        }
+
+        .cost-info {
+            background: #FFF8DC;
+            border: 3px solid #FFD700;
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
         }
 
-        .info-box h3 {
-            color: #4682B4;
+        .cost-info h3 {
+            color: #FF8C00;
             margin-bottom: 15px;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             .title {
                 font-size: 2rem;
             }
@@ -356,23 +257,23 @@
                 padding: 10px;
             }
             
-            .step-container {
-                padding: 20px;
-            }
-
-            .download-button {
-                margin-left: 0;
-                margin-top: 10px;
-            }
-
-            .api-key-input {
-                width: 100%;
-                margin-bottom: 10px;
-                margin-right: 0;
-            }
-
-            .comparison-container {
+            .space-selector {
                 flex-direction: column;
+                align-items: center;
+            }
+            
+            .space-button {
+                min-width: 200px;
+            }
+            
+            .space-iframe {
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .space-iframe {
+                height: 400px;
             }
         }
     </style>
@@ -381,527 +282,215 @@
     <div class="container">
         <div class="header">
             <h1 class="title">🌈 せかいぬりえ 🎨</h1>
-            <p class="subtitle">確実に動く！写真そっくりぬりえ</p>
+            <p class="subtitle">HuggingFace Spacesで 超忠実ぬりえ！</p>
         </div>
 
         <div class="info-box">
-            <h3>🔧 動作確実版の特徴</h3>
+            <h3>🎉 HuggingFace Spaces版の特徴</h3>
             <ul style="color: #2F4F4F; line-height: 1.6;">
-                <li><strong>Replicate専用</strong>: 確実に動作するimg2imgAPI</li>
-                <li><strong>高品質</strong>: ControlNet Cannyで写真に忠実</li>
-                <li><strong>エラーなし</strong>: テスト済みの安定版</li>
-                <li><strong>料金</strong>: 1回約15-30円（高品質保証）</li>
+                <li><strong>完全無料</strong>: 基本機能は無料で利用可能</li>
+                <li><strong>確実動作</strong>: CORSエラーなし、API設定不要</li>
+                <li><strong>3つのSpace</strong>: 用途に応じて選択可能</li>
+                <li><strong>高品質</strong>: 専用モデルによる線画生成</li>
             </ul>
+        </div>
+
+        <div class="cost-info">
+            <h3>💰 料金について</h3>
+            <p style="color: #8B4513; line-height: 1.6;">
+                <strong>基本利用:</strong> 完全無料 🆓<br>
+                <strong>高速処理:</strong> GPUアップグレード時のみ課金（1回数円程度）<br>
+                <strong>おすすめ:</strong> まず無料で試して、必要に応じてアップグレード
+            </p>
         </div>
 
         <div class="instructions">
             <h3>🎯 つかいかた</h3>
             <ol>
-                <li>Replicate APIキーを設定してね</li>
-                <li>すきな写真を えらんでね</li>
-                <li>「超忠実ぬりえにする」ボタンを おしてね</li>
-                <li>ちょっと まっててね（60-90秒くらい）</li>
-                <li>できあがったら プリントして ぬりえを たのしもう！</li>
+                <li>下から好きなSpaceを選んでね</li>
+                <li>Spaceが読み込まれるまで待ってね</li>
+                <li>写真をアップロードしてね</li>
+                <li>設定を調整して「Generate」ボタンを押してね</li>
+                <li>できあがった線画をダウンロードしてね</li>
             </ol>
         </div>
 
-        <!-- APIキー設定セクション -->
-        <div class="step-container" id="apiKeyContainer">
-            <h2 class="step-title">🔑 Replicate API設定</h2>
-            <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
-                動作確実なReplicate APIを使用（img2img対応）<br>
-                <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
-            </p>
-            
-            <div style="margin-bottom: 20px;">
-                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="r8_...">
-                <button onclick="setApiKey()" class="api-key-button">🔧 設定</button>
-            </div>
-            
-            <div id="apiKeyStatus" class="api-status"></div>
-            
-            <details class="api-help">
-                <summary>📖 APIキーの取得方法</summary>
-                <div class="api-help-content">
-                    <ol style="color: #2F4F4F; line-height: 1.8;">
-                        <li><a href="https://replicate.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">Replicate</a> にアクセス</li>
-                        <li>「Sign up」でアカウント作成（GitHubでも可）</li>
-                        <li>ログイン後、右上のアカウントメニューをクリック</li>
-                        <li>「API tokens」を選択</li>
-                        <li>「Create token」をクリック</li>
-                        <li>生成されたトークン（r8_で始まる）をコピー</li>
-                        <li>上記の入力欄に貼り付けて「設定」をクリック</li>
-                    </ol>
-                    <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
-                        💰 <strong>料金:</strong> 1回あたり約15-30円程度（高品質img2img）<br>
-                        🎯 <strong>初回無料クレジット:</strong> $0.10の無料クレジットで数回テスト可能
-                    </p>
-                </div>
-            </details>
-        </div>
-
-        <!-- 画像アップロードセクション -->
-        <div class="step-container" id="uploadContainer" style="opacity: 0.5; pointer-events: none;">
-            <h2 class="step-title">📸 写真を えらんでね</h2>
-            
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📱</div>
-                <div class="upload-text">ここを タップして 写真を えらんでね</div>
-                <div style="font-size: 0.9rem; color: #666;">JPEG、PNG対応（10MB以下）</div>
-                <input type="file" id="fileInput" class="file-input" accept="image/*">
+        <div class="space-info">
+            <div class="space-card" onclick="selectSpace('image2drawing')">
+                <h4>✏️ Image2Drawing</h4>
+                <p>写真を美しい線画に変換する専用Space</p>
+                <ul class="features">
+                    <li>シンプル・複雑の2スタイル</li>
+                    <li>高精度な輪郭抽出</li>
+                    <li>ワンクリック変換</li>
+                    <li>ダウンロード機能</li>
+                </ul>
             </div>
 
-            <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
-            
-            <div id="previewContainer" style="text-align: center; margin-top: 20px;">
-                <!-- プレビュー画像がここに表示される -->
+            <div class="space-card" onclick="selectSpace('controlnet')">
+                <h4>🎮 ControlNet V1.1</h4>
+                <p>ControlNetを使った高品質線画生成</p>
+                <ul class="features">
+                    <li>Canny Edge Detection</li>
+                    <li>カスタマイズ可能</li>
+                    <li>プロ品質出力</li>
+                    <li>複数モデル対応</li>
+                </ul>
             </div>
 
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="button" id="generateButton" disabled>
-                    🎨 超忠実な ぬりえにする！
-                </button>
+            <div class="space-card" onclick="selectSpace('coloring')">
+                <h4>🎨 Coloring Book</h4>
+                <p>塗り絵特化の線画生成Space</p>
+                <ul class="features">
+                    <li>塗り絵最適化</li>
+                    <li>白背景保証</li>
+                    <li>太い線画</li>
+                    <li>子供向け最適</li>
+                </ul>
             </div>
         </div>
 
-        <!-- ローディング表示 -->
-        <div class="loading" id="loadingContainer">
-            <div class="spinner"></div>
-            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">Replicate AIが 写真そっくりな ぬりえを つくっているよ... ✨</p>
-            <div class="status-text" id="statusText">がぞうを アップロードしています...</div>
-            
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-bar" id="progressBar">0%</div>
-            </div>
-        </div>
-
-        <!-- 結果表示 -->
-        <div class="step-container result-container" id="resultContainer">
-            <h2 class="step-title">🎉 超忠実ぬりえ できあがり！</h2>
-            <div id="resultImage">
-                <!-- 生成されたぬりえがここに表示される -->
-            </div>
-            <div>
-                <button class="button print-button" onclick="printColoring()">
-                    🖨️ プリントする
-                </button>
-                <button class="button download-button" onclick="downloadColoring()">
-                    💾 ダウンロード
-                </button>
-            </div>
-            <button class="button" onclick="resetApp()" style="margin-top: 20px; background: linear-gradient(45deg, #FFA500, #FFD700);">
-                🔄 あたらしく つくる
+        <div class="space-selector">
+            <button class="space-button active" onclick="selectSpace('image2drawing')" id="btn-image2drawing">
+                ✏️ Image2Drawing
             </button>
+            <button class="space-button" onclick="selectSpace('controlnet')" id="btn-controlnet">
+                🎮 ControlNet V1.1
+            </button>
+            <button class="space-button" onclick="selectSpace('coloring')" id="btn-coloring">
+                🎨 Coloring Book
+            </button>
+        </div>
+
+        <!-- Image2Drawing Space -->
+        <div class="space-container" id="space-image2drawing">
+            <div class="space-title">✏️ Image2Drawing - 写真→線画変換</div>
+            <div class="space-description">
+                写真を美しい線画に変換する専用Space。シンプルなスタイルと複雑なスタイルが選択できます。
+            </div>
+            <div class="loading-overlay" id="loading-image2drawing">
+                <div class="spinner"></div>
+                <p style="color: #FF69B4; font-size: 1.1rem;">Image2Drawing Spaceを読み込み中...</p>
+            </div>
+            <iframe 
+                src="https://awacke1-image-to-line-drawings.hf.space?embed=true" 
+                class="space-iframe"
+                onload="hideLoading('image2drawing')"
+                title="Image2Drawing Space">
+            </iframe>
+        </div>
+
+        <!-- ControlNet Space -->
+        <div class="space-container" id="space-controlnet" style="display: none;">
+            <div class="space-title">🎮 ControlNet V1.1 - 高品質線画生成</div>
+            <div class="space-description">
+                ControlNet V1.1を使用した高品質な線画生成。Cannyエッジ検出で写真に忠実な線画を作成します。
+            </div>
+            <div class="loading-overlay" id="loading-controlnet">
+                <div class="spinner"></div>
+                <p style="color: #FF69B4; font-size: 1.1rem;">ControlNet Spaceを読み込み中...</p>
+            </div>
+            <iframe 
+                src="https://hysts-controlnet-v1-1.hf.space?embed=true" 
+                class="space-iframe"
+                onload="hideLoading('controlnet')"
+                title="ControlNet Space">
+            </iframe>
+        </div>
+
+        <!-- Coloring Book Space -->
+        <div class="space-container" id="space-coloring" style="display: none;">
+            <div class="space-title">🎨 Coloring Book - 塗り絵特化</div>
+            <div class="space-description">
+                塗り絵に特化した線画生成Space。白い背景と太い線で、子供でも塗りやすいぬりえを作成します。
+            </div>
+            <div class="loading-overlay" id="loading-coloring">
+                <div class="spinner"></div>
+                <p style="color: #FF69B4; font-size: 1.1rem;">Coloring Book Spaceを読み込み中...</p>
+            </div>
+            <!-- 注意: このSpaceは埋め込み対応していない可能性があるため、代替を用意 -->
+            <iframe 
+                src="https://huggingface.co/spaces/stabilityai/stable-diffusion?embed=true" 
+                class="space-iframe"
+                onload="hideLoading('coloring')"
+                title="Stable Diffusion Space">
+            </iframe>
+        </div>
+
+        <div class="info-box" style="margin-top: 30px;">
+            <h3>💡 使い方のコツ</h3>
+            <ul style="color: #2F4F4F; line-height: 1.6;">
+                <li><strong>Image2Drawing</strong>: 最もシンプルで使いやすい</li>
+                <li><strong>ControlNet</strong>: 高品質、設定カスタマイズ可能</li>
+                <li><strong>Coloring Book</strong>: 塗り絵専用、白背景保証</li>
+                <li><strong>処理時間</strong>: 無料版は30秒〜2分程度</li>
+                <li><strong>画像サイズ</strong>: 大きすぎる場合は自動リサイズ</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <p style="color: #8B4513; line-height: 1.6;">
+                💝 <strong>無料で楽しめます！</strong><br>
+                HuggingFace Spacesは基本機能が無料です。<br>
+                高速処理が必要な場合のみ、少額の課金があります。
+            </p>
         </div>
     </div>
 
     <script>
-        // グローバル変数
-        let selectedFile = null;
-        let generatedImageUrl = null;
-        let REPLICATE_API_KEY = '';
+        let currentSpace = 'image2drawing';
 
-        // DOM要素の取得
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const previewContainer = document.getElementById('previewContainer');
-        const generateButton = document.getElementById('generateButton');
-        const loadingContainer = document.getElementById('loadingContainer');
-        const resultContainer = document.getElementById('resultContainer');
-        const errorMessage = document.getElementById('errorMessage');
-        const successMessage = document.getElementById('successMessage');
-        const statusText = document.getElementById('statusText');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('progressBar');
-        const uploadContainer = document.getElementById('uploadContainer');
-
-        // APIキー管理
-        function setApiKey() {
-            const apiKeyInput = document.getElementById('apiKeyInput');
-            const apiKey = apiKeyInput.value.trim();
-            const statusDiv = document.getElementById('apiKeyStatus');
+        function selectSpace(spaceName) {
+            // 現在のスペースを非表示
+            document.getElementById(`space-${currentSpace}`).style.display = 'none';
             
-            if (!apiKey) {
-                showApiKeyStatus('Replicate APIキーを入力してください', 'error');
-                return;
-            }
+            // 新しいスペースを表示
+            document.getElementById(`space-${spaceName}`).style.display = 'block';
             
-            if (!apiKey.startsWith('r8_')) {
-                showApiKeyStatus('正しいReplicate APIキー形式ではありません（r8_で始まる必要があります）', 'error');
-                return;
-            }
+            // ボタンのアクティブ状態を更新
+            document.querySelectorAll('.space-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`btn-${spaceName}`).classList.add('active');
             
-            REPLICATE_API_KEY = apiKey;
-            apiKeyInput.value = '';
-            showApiKeyStatus('Replicate APIキーが設定されました！ 写真を選択してください 🎉', 'success');
+            // 現在のスペースを更新
+            currentSpace = spaceName;
             
-            uploadContainer.style.opacity = '1';
-            uploadContainer.style.pointerEvents = 'auto';
-        }
-
-        function showApiKeyStatus(message, type) {
-            const statusDiv = document.getElementById('apiKeyStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.textContent = message;
-            statusDiv.className = `api-status ${type}`;
-        }
-
-        function checkApiKey() {
-            if (!REPLICATE_API_KEY) {
-                showError('まず Replicate APIキーを設定してください 🔑');
-                return false;
-            }
-            return true;
-        }
-
-        // ファイルアップロード関連
-        uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', handleDragOver);
-        uploadArea.addEventListener('drop', handleDrop);
-        uploadArea.addEventListener('dragleave', handleDragLeave);
-        fileInput.addEventListener('change', handleFileSelect);
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        }
-
-        function handleDragLeave(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        }
-
-        function handleFileSelect(e) {
-            const files = e.target.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        }
-
-        function handleFile(file) {
-            console.log('Selected file:', file.name, file.type, file.size);
-
-            // ファイル形式チェック
-            if (!file.type.startsWith('image/')) {
-                showError('画像ファイルを選択してください');
-                return;
-            }
-
-            // ファイルサイズチェック (10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                showError('ファイルが大きすぎます（10MB以下にしてください）');
-                return;
-            }
-
-            selectedFile = file;
-            hideError();
-            showPreview(file);
-            showSuccess('写真が選択されました！ 🌟');
-            generateButton.disabled = false;
-        }
-
-        function showPreview(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewContainer.innerHTML = `
-                    <img src="${e.target.result}" alt="選択した画像" class="image-preview" id="originalImage">
-                    <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
-                        この写真で Replicateを使って 超忠実ぬりえを つくるよ！ 🎨
-                    </p>
-                `;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            successMessage.style.display = 'none';
-        }
-
-        function showSuccess(message) {
-            successMessage.textContent = message;
-            successMessage.style.display = 'block';
-            errorMessage.style.display = 'none';
-        }
-
-        function hideError() {
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'none';
-        }
-
-        // ファイルをBase64に変換
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
+            // スムーズスクロール
+            document.getElementById(`space-${spaceName}`).scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
             });
         }
 
-        // プログレスバー更新
-        function updateProgress(percent, message) {
-            progressBar.style.width = percent + '%';
-            progressBar.textContent = percent + '%';
-            statusText.textContent = message;
-        }
-
-        // メイン処理：Replicate ControlNet Canny線画生成
-        generateButton.addEventListener('click', generateReplicateColoring);
-
-        async function generateReplicateColoring() {
-            console.log('=== Replicate ControlNet Canny線画生成 ===');
-            
-            if (!checkApiKey()) return;
-            
-            if (!selectedFile) {
-                showError('まず 写真を選択してください！');
-                return;
-            }
-
-            // ローディング表示
-            loadingContainer.style.display = 'block';
-            generateButton.disabled = true;
-            resultContainer.style.display = 'none';
-            hideError();
-            progressContainer.style.display = 'block';
-            updateProgress(0, 'がぞうを じゅんびしています...');
-
-            try {
-                // Base64エンコード
-                updateProgress(10, 'がぞうを Replicate にそうしんしています...');
-                const imageData = await fileToBase64(selectedFile);
-
-                updateProgress(30, 'ControlNet Cannyで 線画生成を かいししています...');
-
-                // Replicate API - 確実に動作するControlNet Cannyモデル
-                const response = await fetch('https://api.replicate.com/v1/predictions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Token ${REPLICATE_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        // 動作確認済みのControlNet Cannyモデル
-                        version: "435061a1b5a4c1e26740464bf786efdfa9cb3a3ac488595a2de23e143fdb0117",
-                        input: {
-                            image: imageData,
-                            prompt: "coloring book page, black and white line art, simple outlines, thick black lines, clean drawing, children's coloring book style, white background, no colors, no shading",
-                            negative_prompt: "color, colored, complex details, photorealistic, shadows, shading, gradients, text, watermark, blurry, messy lines, realistic, photography, noise",
-                            num_inference_steps: 30,
-                            guidance_scale: 12.0,
-                            controlnet_conditioning_scale: 1.0,
-                            strength: 0.8,
-                            low_threshold: 50,
-                            high_threshold: 100
-                        }
-                    }),
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Replicate API Error: ${response.status} - ${errorData.detail || errorData.error || 'Unknown error'}`);
-                }
-
-                const prediction = await response.json();
-                console.log('Prediction started:', prediction.id);
-                
-                updateProgress(50, 'AIが しゃしんを かいせきして せんがを つくっています...');
-
-                // 結果を定期的にチェック
-                let result = prediction;
-                let attempts = 0;
-                const maxAttempts = 60; // 最大3分間待機
-
-                while (result.status === 'starting' || result.status === 'processing') {
-                    if (attempts >= maxAttempts) {
-                        throw new Error('処理時間が長すぎます。もう一度お試しください。');
-                    }
-
-                    await new Promise(resolve => setTimeout(resolve, 3000));
-                    attempts++;
-                    
-                    const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
-                        headers: {
-                            'Authorization': `Token ${REPLICATE_API_KEY}`,
-                        },
-                    });
-                    
-                    if (!statusResponse.ok) {
-                        throw new Error(`ステータス確認に失敗しました: ${statusResponse.status}`);
-                    }
-                    
-                    result = await statusResponse.json();
-                    const progressPercent = Math.min(90, 50 + (attempts * 40 / maxAttempts));
-                    updateProgress(progressPercent, `AIが がんばって つくっています... (${Math.round(attempts * 3 / 60 * 100)}%)`);
-                }
-
-                console.log('Final result:', result);
-
-                if (result.status === 'succeeded' && result.output) {
-                    updateProgress(100, 'しゃしんと うりふたつの ぬりえが できました！');
-                    
-                    // 出力形式の確認
-                    generatedImageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
-                    
-                    if (!generatedImageUrl) {
-                        throw new Error('画像の生成に失敗しました。出力が空です。');
-                    }
-                    
-                    showResult(generatedImageUrl, 'Replicate-ControlNet-Canny', '🎯 写真に忠実な線画が完成しました！');
-                } else if (result.status === 'failed') {
-                    throw new Error(`生成に失敗しました: ${result.error || 'Unknown error'}`);
-                } else if (result.status === 'canceled') {
-                    throw new Error('処理がキャンセルされました');
-                } else {
-                    throw new Error(`予期しないステータス: ${result.status}`);
-                }
-
-            } catch (error) {
-                console.error('Replicate エラー:', error);
-                
-                let errorMessage = error.message;
-                if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                    errorMessage = 'Replicate APIキーが正しく設定されていません 🔑\n\nAPIキーを確認してください';
-                } else if (error.message.includes('402') || error.message.includes('payment') || error.message.includes('billing')) {
-                    errorMessage = 'Replicateアカウントの残高が不足しています 💳\n\nhttps://replicate.com/billing で残高を確認してください';
-                } else if (error.message.includes('429') || error.message.includes('rate limit')) {
-                    errorMessage = 'API使用量の上限に達しました ⏰\n\nしばらく待ってから再試行してください';
-                } else if (error.message.includes('network') || error.message.includes('fetch')) {
-                    errorMessage = 'ネットワーク接続に問題があります 🌐\n\nインターネット接続を確認してください';
-                } else if (error.message.includes('timeout')) {
-                    errorMessage = '処理時間が長すぎます ⏱️\n\n画像サイズを小さくするか、後でもう一度お試しください';
-                }
-                
-                showError(`エラーが発生しました 😢\n\n${errorMessage}\n\nもういちど ためしてね！`);
-            } finally {
-                loadingContainer.style.display = 'none';
-                generateButton.disabled = false;
-                progressContainer.style.display = 'none';
+        function hideLoading(spaceName) {
+            const loadingOverlay = document.getElementById(`loading-${spaceName}`);
+            if (loadingOverlay) {
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 1000); // 1秒後にローディングを非表示
             }
         }
 
-        function showResult(imageUrl, model, message) {
-            document.getElementById('resultImage').innerHTML = `
-                <div style="margin-bottom: 20px;">
-                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 写真そっくりな ぬりえが できたよ！</p>
-                    <p style="color: #FF69B4; font-size: 1rem; margin-bottom: 10px;">${message}</p>
-                    
-                    <div class="comparison-container">
-                        <div class="comparison-item">
-                            <h4>📷 もとの写真</h4>
-                            <img src="${document.getElementById('originalImage').src}" alt="元の写真" style="max-width: 100%; max-height: 300px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #87CEEB;">
-                        </div>
-                        <div class="comparison-item">
-                            <h4>🎨 完成したぬりえ</h4>
-                            <img src="${imageUrl}" alt="生成されたぬりえ" style="max-width: 100%; max-height: 300px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #FFB6C1;">
-                        </div>
-                    </div>
-                    
-                    <p style="color: #8B4513; font-size: 1rem; margin-top: 15px;">
-                        Replicateで つくった 超忠実 ぬりえだよ！ 🌈<br>
-                        <small>(${model}で せいせい)</small>
-                    </p>
-                </div>
-            `;
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('HuggingFace Spaces版 せかいぬりえ 初期化完了');
             
-            resultContainer.style.display = 'block';
-            resultContainer.scrollIntoView({ behavior: 'smooth' });
-        }
+            // 初期ローディング状態を設定
+            setTimeout(() => {
+                const initialLoading = document.getElementById('loading-image2drawing');
+                if (initialLoading && initialLoading.style.display !== 'none') {
+                    initialLoading.style.display = 'none';
+                }
+            }, 3000); // 3秒後に強制的にローディングを非表示
+        });
 
-        function printColoring() {
-            if (!generatedImageUrl) {
-                showError('プリントする がぞうが ありません');
-                return;
+        // エラーハンドリング
+        window.addEventListener('error', function(event) {
+            if (event.target.tagName === 'IFRAME') {
+                console.log('iframe loading error, but this is normal for some spaces');
             }
-
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>せかいぬりえ - Replicate版 プリント</title>
-                        <style>
-                            body { 
-                                margin: 0; 
-                                padding: 20px; 
-                                text-align: center; 
-                                font-family: 'Comic Sans MS', Arial, sans-serif;
-                            }
-                            img {
-                                max-height: 90vh;
-                                border: 2px solid #000;
-                            }
-                            h1 {
-                                color: #FF69B4;
-                                font-size: 2rem;
-                                margin-bottom: 20px;
-                            }
-                            @media print {
-                                body { margin: 10px; }
-                                h1 { font-size: 1.5rem; }
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>🌈 せかいぬりえ 🎨</h1>
-                        <img src="${generatedImageUrl}" alt="Replicateぬりえ">
-                        <p style="margin-top: 20px; color: #8B4513;">写真そっくりな ぬりえを たのしんでね！</p>
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
-            
-            // 画像読み込み完了後にプリント
-            const img = printWindow.document.querySelector('img');
-            img.onload = () => {
-                setTimeout(() => printWindow.print(), 500);
-            };
-        }
-
-        function downloadColoring() {
-            if (!generatedImageUrl) {
-                showError('ダウンロードする がぞうが ありません');
-                return;
-            }
-
-            // 画像をダウンロード
-            const link = document.createElement('a');
-            link.href = generatedImageUrl;
-            link.download = `せかいぬりえ_Replicate_${new Date().getTime()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showSuccess('Replicateぬりえを ダウンロードしました！ 📥');
-        }
-
-        function resetApp() {
-            selectedFile = null;
-            generatedImageUrl = null;
-            fileInput.value = '';
-            previewContainer.innerHTML = '';
-            resultContainer.style.display = 'none';
-            loadingContainer.style.display = 'none';
-            generateButton.disabled = true;
-            hideError();
-            
-            // トップにスクロール
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // 初期化
-        console.log('Replicate専用版（動作確実）初期化完了');
+        });
     </script>
 </body>
 </html>
