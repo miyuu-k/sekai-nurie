@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>せかいぬりえ - 修正版</title>
+    <title>せかいぬりえ - Stable Diffusion版</title>
     <style>
         * {
             margin: 0;
@@ -316,6 +316,31 @@
             border: 2px solid #87CEEB;
         }
 
+        .method-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .method-button {
+            background: linear-gradient(45deg, #9370DB, #BA55D3);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .method-button.active {
+            background: linear-gradient(45deg, #FF69B4, #FFB6C1);
+            transform: scale(1.05);
+        }
+
         @media (max-width: 600px) {
             .title {
                 font-size: 2rem;
@@ -339,6 +364,11 @@
                 margin-bottom: 10px;
                 margin-right: 0;
             }
+
+            .method-button {
+                min-width: 120px;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -346,52 +376,92 @@
     <div class="container">
         <div class="header">
             <h1 class="title">🌈 せかいぬりえ 🎨</h1>
-            <p class="subtitle">写真に忠実で かわいい ぬりえを つくろう！</p>
+            <p class="subtitle">写真そのままの 超忠実ぬりえを つくろう！</p>
         </div>
 
         <div class="instructions">
             <h3>🎯 つかいかた</h3>
             <ol>
-                <li>OpenAI APIキーを設定してね</li>
+                <li>APIキーを設定してね（HuggingFace または Replicate）</li>
                 <li>すきな写真を えらんでね</li>
+                <li>AI手法を選んでね</li>
                 <li>「ぬりえにする」ボタンを おしてね</li>
-                <li>ちょっと まっててね（45秒くらい）</li>
+                <li>ちょっと まっててね（30-60秒くらい）</li>
                 <li>できあがったら プリントして ぬりえを たのしもう！</li>
             </ol>
         </div>
 
         <!-- APIキー設定セクション -->
         <div class="step-container" id="apiKeyContainer">
-            <h2 class="step-title">🔑 OpenAI APIキー設定</h2>
-            <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
-                より高品質で写真に忠実な線画を生成するために、OpenAI APIキーを設定してください。<br>
-                <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
-            </p>
+            <h2 class="step-title">🔑 API設定</h2>
             
-            <div style="margin-bottom: 20px;">
-                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="sk-proj-...">
-                <button onclick="setApiKey()" class="api-key-button">🔧 設定</button>
+            <div class="method-selector">
+                <button class="method-button active" onclick="selectMethod('huggingface')" id="hfButton">
+                    🤗 HuggingFace
+                </button>
+                <button class="method-button" onclick="selectMethod('replicate')" id="replicateButton">
+                    🔄 Replicate
+                </button>
+            </div>
+
+            <div id="huggingfaceConfig">
+                <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
+                    HuggingFace APIを使用（無料枠あり、img2img対応）<br>
+                    <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
+                </p>
+                
+                <div style="margin-bottom: 20px;">
+                    <input type="password" id="hfApiKeyInput" class="api-key-input" placeholder="hf_...">
+                    <button onclick="setHfApiKey()" class="api-key-button">🔧 設定</button>
+                </div>
+                
+                <details class="api-help">
+                    <summary>📖 HuggingFace APIキーの取得方法</summary>
+                    <div class="api-help-content">
+                        <ol style="color: #2F4F4F; line-height: 1.8;">
+                            <li><a href="https://huggingface.co/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">HuggingFace</a> にアクセス</li>
+                            <li>アカウントを作成・ログイン</li>
+                            <li>プロフィール→Settings→Access Tokensをクリック</li>
+                            <li>「Create new token」をクリック</li>
+                            <li>Roleで「Write」を選択</li>
+                            <li>生成されたトークン（hf_で始まる）をコピー</li>
+                        </ol>
+                        <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
+                            💰 <strong>料金:</strong> 無料枠で月数百回利用可能
+                        </p>
+                    </div>
+                </details>
+            </div>
+
+            <div id="replicateConfig" style="display: none;">
+                <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
+                    Replicate APIを使用（高品質、従量課金制）<br>
+                    <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
+                </p>
+                
+                <div style="margin-bottom: 20px;">
+                    <input type="password" id="replicateApiKeyInput" class="api-key-input" placeholder="r8_...">
+                    <button onclick="setReplicateApiKey()" class="api-key-button">🔧 設定</button>
+                </div>
+                
+                <details class="api-help">
+                    <summary>📖 Replicate APIキーの取得方法</summary>
+                    <div class="api-help-content">
+                        <ol style="color: #2F4F4F; line-height: 1.8;">
+                            <li><a href="https://replicate.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">Replicate</a> にアクセス</li>
+                            <li>アカウントを作成・ログイン</li>
+                            <li>右上のアカウントメニュー→API tokensをクリック</li>
+                            <li>「Create token」をクリック</li>
+                            <li>生成されたトークン（r8_で始まる）をコピー</li>
+                        </ol>
+                        <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
+                            💰 <strong>料金:</strong> 1回あたり約10-30円程度
+                        </p>
+                    </div>
+                </details>
             </div>
             
             <div id="apiKeyStatus" class="api-status"></div>
-            
-            <details class="api-help">
-                <summary>📖 APIキーの取得方法</summary>
-                <div class="api-help-content">
-                    <ol style="color: #2F4F4F; line-height: 1.8;">
-                        <li><a href="https://platform.openai.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">OpenAI Platform</a> にアクセス</li>
-                        <li>アカウントを作成・ログイン</li>
-                        <li>左メニューの「API Keys」をクリック</li>
-                        <li>「Create new secret key」をクリック</li>
-                        <li>生成されたキー（sk-proj-で始まる）をコピー</li>
-                        <li>上記の入力欄に貼り付けて「設定」をクリック</li>
-                    </ol>
-                    <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
-                        ⚠️ <strong>重要:</strong> APIキーは大切に管理してください。他人と共有しないでください。<br>
-                        💰 DALL-E 3の利用料金: 1回あたり約3-8円程度
-                    </p>
-                </div>
-            </details>
         </div>
 
         <!-- 画像アップロードセクション -->
@@ -401,7 +471,7 @@
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📱</div>
                 <div class="upload-text">ここを タップして 写真を えらんでね</div>
-                <div style="font-size: 0.9rem; color: #666;">JPEG、PNG、HEIC対応</div>
+                <div style="font-size: 0.9rem; color: #666;">JPEG、PNG対応</div>
                 <input type="file" id="fileInput" class="file-input" accept="image/*">
             </div>
 
@@ -414,7 +484,7 @@
 
             <div style="text-align: center; margin-top: 20px;">
                 <button class="button" id="generateButton" disabled>
-                    🎨 忠実で かわいい ぬりえにする！
+                    🎨 超忠実な ぬりえにする！
                 </button>
             </div>
         </div>
@@ -422,8 +492,8 @@
         <!-- ローディング表示 -->
         <div class="loading" id="loadingContainer">
             <div class="spinner"></div>
-            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">AI が 写真に忠実な ぬりえを つくっているよ... ✨</p>
-            <div class="status-text" id="statusText">しゃしんを かいせきしています...</div>
+            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">AI が 写真そのままの ぬりえを つくっているよ... ✨</p>
+            <div class="status-text" id="statusText">がぞうを じゅんびしています...</div>
             
             <div class="progress-container" id="progressContainer">
                 <div class="progress-bar" id="progressBar">0%</div>
@@ -454,7 +524,9 @@
         // グローバル変数
         let selectedFile = null;
         let generatedImageUrl = null;
-        let OPENAI_API_KEY = '';
+        let currentMethod = 'huggingface';
+        let HF_API_KEY = '';
+        let REPLICATE_API_KEY = '';
 
         // DOM要素の取得
         const uploadArea = document.getElementById('uploadArea');
@@ -470,28 +542,63 @@
         const progressBar = document.getElementById('progressBar');
         const uploadContainer = document.getElementById('uploadContainer');
 
-        // APIキー管理
-        function setApiKey() {
-            const apiKeyInput = document.getElementById('apiKeyInput');
+        // API手法選択
+        function selectMethod(method) {
+            currentMethod = method;
+            
+            // ボタンの状態更新
+            document.getElementById('hfButton').classList.remove('active');
+            document.getElementById('replicateButton').classList.remove('active');
+            document.getElementById(method === 'huggingface' ? 'hfButton' : 'replicateButton').classList.add('active');
+            
+            // 設定パネルの表示切り替え
+            document.getElementById('huggingfaceConfig').style.display = method === 'huggingface' ? 'block' : 'none';
+            document.getElementById('replicateConfig').style.display = method === 'replicate' ? 'block' : 'none';
+            
+            // アップロードエリアの状態確認
+            checkApiKeyAndEnableUpload();
+        }
+
+        // HuggingFace APIキー設定
+        function setHfApiKey() {
+            const apiKeyInput = document.getElementById('hfApiKeyInput');
             const apiKey = apiKeyInput.value.trim();
-            const statusDiv = document.getElementById('apiKeyStatus');
             
             if (!apiKey) {
-                showApiKeyStatus('APIキーを入力してください', 'error');
+                showApiKeyStatus('HuggingFace APIキーを入力してください', 'error');
                 return;
             }
             
-            if (!apiKey.startsWith('sk-')) {
-                showApiKeyStatus('正しいAPIキー形式ではありません（sk-で始まる必要があります）', 'error');
+            if (!apiKey.startsWith('hf_')) {
+                showApiKeyStatus('正しいHuggingFace APIキー形式ではありません（hf_で始まる必要があります）', 'error');
                 return;
             }
             
-            OPENAI_API_KEY = apiKey;
+            HF_API_KEY = apiKey;
             apiKeyInput.value = '';
-            showApiKeyStatus('APIキーが設定されました！ 写真を選択してください 🎉', 'success');
+            showApiKeyStatus('HuggingFace APIキーが設定されました！ 写真を選択してください 🎉', 'success');
+            checkApiKeyAndEnableUpload();
+        }
+
+        // Replicate APIキー設定
+        function setReplicateApiKey() {
+            const apiKeyInput = document.getElementById('replicateApiKeyInput');
+            const apiKey = apiKeyInput.value.trim();
             
-            uploadContainer.style.opacity = '1';
-            uploadContainer.style.pointerEvents = 'auto';
+            if (!apiKey) {
+                showApiKeyStatus('Replicate APIキーを入力してください', 'error');
+                return;
+            }
+            
+            if (!apiKey.startsWith('r8_')) {
+                showApiKeyStatus('正しいReplicate APIキー形式ではありません（r8_で始まる必要があります）', 'error');
+                return;
+            }
+            
+            REPLICATE_API_KEY = apiKey;
+            apiKeyInput.value = '';
+            showApiKeyStatus('Replicate APIキーが設定されました！ 写真を選択してください 🎉', 'success');
+            checkApiKeyAndEnableUpload();
         }
 
         function showApiKeyStatus(message, type) {
@@ -501,9 +608,23 @@
             statusDiv.className = `api-status ${type}`;
         }
 
+        function checkApiKeyAndEnableUpload() {
+            const hasKey = (currentMethod === 'huggingface' && HF_API_KEY) || 
+                          (currentMethod === 'replicate' && REPLICATE_API_KEY);
+            
+            if (hasKey) {
+                uploadContainer.style.opacity = '1';
+                uploadContainer.style.pointerEvents = 'auto';
+            }
+        }
+
         function checkApiKey() {
-            if (!OPENAI_API_KEY) {
-                showError('まず OpenAI APIキーを設定してください 🔑');
+            if (currentMethod === 'huggingface' && !HF_API_KEY) {
+                showError('まず HuggingFace APIキーを設定してください 🔑');
+                return false;
+            }
+            if (currentMethod === 'replicate' && !REPLICATE_API_KEY) {
+                showError('まず Replicate APIキーを設定してください 🔑');
                 return false;
             }
             return true;
@@ -570,7 +691,7 @@
                 previewContainer.innerHTML = `
                     <img src="${e.target.result}" alt="選択した画像" class="image-preview">
                     <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
-                        この写真で 忠実で超かわいい ぬりえを つくるよ！ 🎨
+                        この写真で 超忠実な ぬりえを つくるよ！ 🎨
                     </p>
                 `;
             };
@@ -611,11 +732,11 @@
             statusText.textContent = message;
         }
 
-        // メイン処理：忠実性重視ぬりえ生成
-        generateButton.addEventListener('click', generateFaithfulColoring);
+        // メイン処理：img2img線画生成
+        generateButton.addEventListener('click', generateImg2ImgColoring);
 
-        async function generateFaithfulColoring() {
-            console.log('=== 忠実性重視改良版 ===');
+        async function generateImg2ImgColoring() {
+            console.log(`=== ${currentMethod.toUpperCase()} img2img線画生成 ===`);
             
             if (!checkApiKey()) return;
             
@@ -630,298 +751,20 @@
             resultContainer.style.display = 'none';
             hideError();
             progressContainer.style.display = 'block';
-            updateProgress(0, 'しゃしんを あっぷろーどしています...');
+            updateProgress(0, 'がぞうを じゅんびしています...');
 
             try {
-                // 画像をBase64に変換
-                updateProgress(10, 'しゃしんを じゅんびしています...');
-                const imageData = await fileToBase64(selectedFile);
-                
-                // === STAGE 1: 写真の詳細特徴分析 ===
-                updateProgress(25, 'しゃしんを くわしく かいせきしています... 🔍');
-                console.log('STAGE 1: 詳細特徴分析（忠実性最優先）...');
-                
-                const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `この写真をそのまま認識できる程度に忠実なぬりえにするため、写真の特徴を詳細に分析してください：
-
-【忠実性最優先分析】
-1. 被写体の具体的特徴：
-   - 動物/人物の種類、品種、年齢
-   - 顔の形、目の形・位置・大きさ（実際のサイズ感）
-   - 耳の形・向き・位置
-   - 体型・姿勢・座り方/立ち方
-   - 毛色・模様の具体的配置
-
-2. 顔の詳細：
-   - 鼻の位置・形
-   - 口の位置・形・表情
-   - 目と鼻と口の相対的位置関係
-   - 顔の輪郭・頬の形
-
-3. 体の特徴：
-   - 胴体の形・太さ
-   - 足の位置・形
-   - しっぽの形・位置・向き
-   - 全体的なプロポーション
-
-4. 背景の正確な記録：
-   - 床の材質・模様
-   - 壁・家具の位置
-   - 光の当たり方・影の位置
-
-【目標】
-この分析結果から、元写真を見た人が「確実に同じ対象だ」と認識できる線画を作成するため。
-可愛さよりも「正確性」を重視。`
-                                    },
-                                    {
-                                        type: "image_url",
-                                        image_url: {
-                                            url: imageData
-                                        }
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 400
-                    }),
-                });
-
-                let detailedAnalysis = "a subject in the photo";
-                if (analysisResponse.ok) {
-                    const analysisResult = await analysisResponse.json();
-                    if (analysisResult.choices && analysisResult.choices[0]) {
-                        detailedAnalysis = analysisResult.choices[0].message.content.trim();
-                        console.log('STAGE 1 - 詳細分析:', detailedAnalysis);
-                    }
+                if (currentMethod === 'huggingface') {
+                    await generateWithHuggingFace();
+                } else if (currentMethod === 'replicate') {
+                    await generateWithReplicate();
                 }
-
-                // === STAGE 2: 忠実性保持設計 ===
-                updateProgress(45, 'ぬりえの せっけいを しています... 📐');
-                console.log('STAGE 2: 忠実性保持設計...');
-                
-                const designResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `以下の詳細分析から、忠実性85%を保ちつつ、適度な簡素化を行う設計をしてください：
-
-【詳細分析結果】
-${detailedAnalysis}
-
-【忠実性85%の設計方針】
-🎯 絶対に保持する要素：
-- 顔の形、目・鼻・口の正確な位置関係
-- 耳の実際の形・向き・大きさ
-- 体型・姿勢・座り方の正確な再現
-- 毛色・模様の実際の配置パターン
-- 背景要素の正確な位置・形
-
-📏 適度な簡素化（線画化）：
-- 毛の質感 → 3-4つの明確な色分け境界線
-- 細かい模様 → 大きな区域の境界線
-- 影・光 → シンプルな輪郭線のみ
-- 背景の細部 → 主要な形状のアウトライン
-
-❌ 絶対に変更しない：
-- 基本的なプロポーション
-- 顔のパーツ配置
-- 特徴的な毛色パターン
-- 体の向き・姿勢
-- 全体的な構図
-
-【簡素化ルール】
-- 線の太さを統一（coloring book style）
-- 塗りつぶし可能な明確な区域作成
-- でも元の特徴は必ず保持
-
-忠実性最優先で設計方針を出力してください。`
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 350
-                    }),
-                });
-
-                let designPlan = detailedAnalysis;
-                if (designResponse.ok) {
-                    const designResult = await designResponse.json();
-                    if (designResult.choices && designResult.choices[0]) {
-                        designPlan = designResult.choices[0].message.content.trim();
-                        console.log('STAGE 2 - 設計方針:', designPlan);
-                    }
-                }
-
-                // === STAGE 3: 最終プロンプト構築 ===
-                updateProgress(65, 'さいごの ちょうせいを しています... 🎯');
-                console.log('STAGE 3: 最終プロンプト構築...');
-                
-                const promptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `以下の設計方針から、忠実性重視のDALL-E 3プロンプトを構築してください：
-
-【設計方針】
-${designPlan}
-
-【最終プロンプト構築（忠実性最優先）】
-目標: 元写真と同じ対象だと確実に認識できる線画
-
-必須要素:
-1. 正確性の確保：
-   - "Exact same pose and position as in the photo"
-   - "Same facial features and proportions"
-   - "Identical body shape and posture"
-   
-2. 線画品質：
-   - "Clean coloring book page"
-   - "Thick black outlines only"
-   - "Pure white background"
-   - "No colors, no shading, no textures"
-
-3. 不要要素の除外：
-   - "No color palettes"
-   - "No additional decorative elements"
-   - "No cartoon exaggeration"
-   - "Simple line art only"
-
-4. 品質指定：
-   - "Professional coloring book style"
-   - "Clear defined areas for coloring"
-   - "Age-appropriate for children"
-
-【禁止事項】
-- カラーパレットやその他の装飾要素
-- 過度な可愛らしさの追加
-- 元の特徴の大幅な変更
-
-元写真に忠実で、純粋な線画のみのプロンプトを英語で出力してください。`
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 250
-                    }),
-                });
-
-                let finalPrompt = designPlan;
-                if (promptResponse.ok) {
-                    const promptResult = await promptResponse.json();
-                    if (promptResult.choices && promptResult.choices[0]) {
-                        finalPrompt = promptResult.choices[0].message.content.trim();
-                        console.log('STAGE 3 - 最終プロンプト:', finalPrompt);
-                    }
-                }
-
-                updateProgress(75, 'かわいくて ぬりやすい ぬりえを つくっています... ✨');
-
-                // === 忠実性重視のDALL-E 3プロンプト強化 ===
-                const enhancedPrompt = `${finalPrompt}
-
-CRITICAL REQUIREMENTS FOR FAITHFUL COLORING BOOK:
-
-🎯 MAXIMUM FAITHFULNESS TO ORIGINAL PHOTO:
-- Preserve exact same pose, position, and orientation as photo
-- Maintain actual facial features and proportions (no cartoon enlargement)
-- Keep real body shape, posture, and size relationships
-- Preserve authentic fur/hair patterns and markings exactly as shown
-- Maintain accurate background elements in same positions
-
-📏 COLORING BOOK SIMPLIFICATION ONLY:
-- Convert photo to clean black line art on pure white background
-- Use thick, clear outlines suitable for coloring
-- Simplify textures into colorable regions while keeping shapes accurate
-- Remove photo details like shadows/highlights but keep all structural elements
-- Create clear boundaries between different colored areas
-
-❌ STRICTLY FORBIDDEN:
-- NO color palettes, decorative borders, or additional elements
-- NO cartoon/kawaii exaggeration of features (especially eyes)
-- NO changing facial expressions or body proportions  
-- NO adding cute elements not present in original photo
-- NO backgrounds or elements not in the original image
-
-✅ MUST ACHIEVE:
-- Anyone seeing this coloring page should immediately recognize it as the same subject from the photo
-- Professional coloring book quality with clean, bold lines
-- Age-appropriate for children but maintaining photographic accuracy
-- Pure line art only - absolutely no colors, shading, or decorative elements
-
-GOAL: Create a line drawing so faithful to the original that family members would say "That's definitely our [subject]!" while being perfectly suitable for coloring.`;
-
-                console.log('Generating faithful coloring page with enhanced DALL-E 3...');
-
-                // === DALL-E 3で忠実性重視の線画生成 ===
-                const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "dall-e-3",
-                        prompt: enhancedPrompt,
-                        n: 1,
-                        size: "1024x1024",
-                        quality: "hd"
-                    }),
-                });
-
-                if (!dalle3Response.ok) {
-                    const errorData = await dalle3Response.json();
-                    throw new Error(`API Error: ${dalle3Response.status} - ${errorData.error?.message}`);
-                }
-
-                const dalle3Result = await dalle3Response.json();
-
-                if (dalle3Result.data && dalle3Result.data.length > 0) {
-                    updateProgress(100, 'かわいくて ぬりやすい ぬりえが できました！');
-                    generatedImageUrl = dalle3Result.data[0].url;
-                    showResult(dalle3Result.data[0].url, 'DALL-E-3-忠実版', '🎯 写真に忠実で可愛いぬりえです！');
-                } else {
-                    throw new Error('No image generated');
-                }
-
             } catch (error) {
-                console.error('忠実性重視版エラー:', error);
+                console.error(`${currentMethod}エラー:`, error);
                 
                 let errorMessage = error.message;
                 if (error.message.includes('401')) {
-                    errorMessage = 'OpenAI APIキーが正しく設定されていません 🔑';
+                    errorMessage = 'APIキーが正しく設定されていません 🔑';
                 } else if (error.message.includes('429')) {
                     errorMessage = 'API使用量の上限に達しました ⏰';
                 } else if (error.message.includes('network')) {
@@ -936,14 +779,120 @@ GOAL: Create a line drawing so faithful to the original that family members woul
             }
         }
 
+        // HuggingFace APIでの線画生成
+        async function generateWithHuggingFace() {
+            updateProgress(20, 'HuggingFace APIに そうしんしています...');
+            
+            // Base64エンコード
+            const imageData = await fileToBase64(selectedFile);
+            const base64Data = imageData.split(',')[1]; // data:image/jpeg;base64, の部分を除去
+
+            updateProgress(40, 'img2imgで せんがを つくっています...');
+
+            // HuggingFace Inference API - Stable Diffusion img2img
+            const response = await fetch('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${HF_API_KEY}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    inputs: 'line art, coloring book style, black and white outline drawing, simple lines, children coloring page, clean lines, no colors, thick outlines',
+                    parameters: {
+                        image: base64Data,
+                        strength: 0.8,
+                        guidance_scale: 15,
+                        negative_prompt: 'color, colored, complex details, photorealistic, shadows, shading, gradients, text, watermark'
+                    }
+                }),
+            });
+
+            updateProgress(80, 'けっかを しょりしています...');
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HuggingFace API Error: ${response.status} - ${errorData.error}`);
+            }
+
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+
+            updateProgress(100, 'ちょうかわいい ぬりえが できました！');
+            generatedImageUrl = imageUrl;
+            showResult(imageUrl, 'HuggingFace-Stable-Diffusion', '🤗 写真に忠実な線画です！');
+        }
+
+        // Replicate APIでの線画生成
+        async function generateWithReplicate() {
+            updateProgress(20, 'Replicate APIに そうしんしています...');
+            
+            // Base64エンコード
+            const imageData = await fileToBase64(selectedFile);
+
+            updateProgress(40, '高品質img2imgで せんがを つくっています...');
+
+            // Replicate API - ControlNet線画生成
+            const response = await fetch('https://api.replicate.com/v1/predictions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${REPLICATE_API_KEY}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    version: "435061a1b5a4c1e26740464bf786efdfa9cb3a3ac488595a2de23e143fdb0117", // ControlNet Canny
+                    input: {
+                        image: imageData,
+                        prompt: "line art, coloring book, black and white outline drawing, simple clean lines, children coloring page, thick black outlines only, no colors, no shading",
+                        negative_prompt: "color, colored, complex details, photorealistic, shadows, shading, gradients, text, watermark, blurry",
+                        num_inference_steps: 30,
+                        guidance_scale: 15,
+                        controlnet_conditioning_scale: 1.0,
+                        strength: 0.8
+                    }
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Replicate API Error: ${response.status} - ${errorData.detail}`);
+            }
+
+            const prediction = await response.json();
+            
+            updateProgress(60, 'AIが がんばって つくっています...');
+
+            // 結果を定期的にチェック
+            let result = prediction;
+            while (result.status === 'starting' || result.status === 'processing') {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
+                    headers: {
+                        'Authorization': `Token ${REPLICATE_API_KEY}`,
+                    },
+                });
+                
+                result = await statusResponse.json();
+                updateProgress(Math.min(90, 60 + Math.random() * 20), 'もうすこしで できあがり...');
+            }
+
+            if (result.status === 'succeeded' && result.output) {
+                updateProgress(100, 'こうひんしつ ぬりえが できました！');
+                generatedImageUrl = result.output[0] || result.output;
+                showResult(generatedImageUrl, 'Replicate-ControlNet', '🔄 高品質で忠実な線画です！');
+            } else {
+                throw new Error(`Generation failed: ${result.error || 'Unknown error'}`);
+            }
+        }
+
         function showResult(imageUrl, model, message) {
             document.getElementById('resultImage').innerHTML = `
                 <div style="margin-bottom: 20px;">
-                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 超かわいい ぬりえが できたよ！</p>
+                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 写真そっくりな ぬりえが できたよ！</p>
                     <p style="color: #FF69B4; font-size: 1rem; margin-bottom: 10px;">${message}</p>
                     <img src="${imageUrl}" alt="生成されたぬりえ" style="max-width: 100%; max-height: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #FFB6C1;">
                     <p style="color: #8B4513; font-size: 1rem; margin-top: 10px;">
-                        写真から作った オリジナル ぬりえだよ！ 🌈<br>
+                        img2imgで つくった 超忠実 ぬりえだよ！ 🌈<br>
                         <small>(${model}で せいせい)</small>
                     </p>
                 </div>
@@ -1011,7 +960,7 @@ GOAL: Create a line drawing so faithful to the original that family members woul
             // 画像をダウンロード
             const link = document.createElement('a');
             link.href = generatedImageUrl;
-            link.download = `せかいぬりえ_${new Date().getTime()}.png`;
+            link.download = `せかいぬりえ_${currentMethod}_${new Date().getTime()}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1034,7 +983,7 @@ GOAL: Create a line drawing so faithful to the original that family members woul
         }
 
         // 初期化
-        console.log('忠実性重視改良版初期化完了');
+        console.log('Stable Diffusion img2img版初期化完了');
     </script>
 </body>
 </html>
