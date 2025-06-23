@@ -656,11 +656,11 @@
             statusText.textContent = message;
         }
 
-        // メイン処理：ModelsLab API v6 Realtime img2img
+        // メイン処理：ModelsLab API 2段階img2img
         generateButton.addEventListener('click', generateModelsLabColoring);
 
         async function generateModelsLabColoring() {
-            console.log('=== ModelsLab API v6 Realtime img2img ===');
+            console.log('=== ModelsLab API 2段階img2img ===');
             
             if (!checkApiKey()) return;
             
@@ -678,13 +678,19 @@
             updateProgress(0, 'がぞうを エンコードしています...');
 
             try {
-                // Base64エンコード（data:image/xxx;base64,xxx形式）
+                // ステップ1: Base64エンコード
                 updateProgress(10, 'がぞうを エンコードしています...');
                 const base64DataUrl = await fileToBase64(selectedFile);
+                // data:image/xxx;base64,xxxxxx から base64部分のみを抽出
+                const base64Only = base64DataUrl.split(',')[1];
 
-                updateProgress(30, 'ModelsLab v6 Realtime APIに そうしんしています...');
+                // ステップ2: 画像をModelsLabにアップロードしてURLを取得
+                updateProgress(25, 'がぞうを ModelsLabに アップロードしています...');
+                const imageUrl = await uploadImageToModelsLab(base64Only);
 
-                // ModelsLab API v6 Realtime 呼び出し
+                // ステップ3: 取得したURLでimg2img実行
+                updateProgress(50, 'ModelsLab v6 Realtime APIで ぬりえを せいせいしています...');
+
                 const headers = new Headers();
                 headers.append("Content-Type", "application/json");
 
@@ -692,7 +698,7 @@
                     "key": MODELSLAB_API_KEY,
                     "prompt": "coloring book page, black and white line art, simple outlines, thick black lines, clean drawing, children's coloring book style, white background, no colors, no shading, line drawing",
                     "negative_prompt": "color, colored, complex details, photorealistic, shadows, shading, gradients, text, watermark, blurry, messy lines, realistic, photography, noise, background pattern",
-                    "init_image": base64DataUrl, // data:image/xxx;base64,xxx 形式
+                    "init_image": imageUrl,
                     "width": "512",
                     "height": "512",
                     "samples": "1",
@@ -711,11 +717,11 @@
                     redirect: 'follow'
                 };
 
-                console.log('Sending request to ModelsLab v6 Realtime API...');
+                console.log('Sending img2img request to ModelsLab v6 Realtime API...');
                 
                 const response = await fetch("https://modelslab.com/api/v6/realtime/img2img", requestOptions);
                 
-                updateProgress(60, 'ModelsLab v6が がぞうを しょりしています...');
+                updateProgress(75, 'ModelsLab v6が がぞうを しょりしています...');
 
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -735,12 +741,12 @@
                         throw new Error('APIから画像URLが返されませんでした');
                     }
                     
-                    showResult(generatedImageUrl, 'ModelsLab-v6-Realtime', '⚡ 最新v6 Realtimeで高速生成完了！');
+                    showResult(generatedImageUrl, 'ModelsLab-v6-2Step', '⚡ v6 Realtime 2段階プロセスで生成完了！');
                 } else if (result.status === 'error') {
                     throw new Error(`API Error: ${result.message || result.error || 'Unknown error'}`);
                 } else if (result.status === 'processing') {
                     // v6 Realtimeは通常即座に結果を返すが、念のため処理中対応
-                    updateProgress(80, 'しょりちゅうです... しばらく おまちください...');
+                    updateProgress(90, 'しょりちゅうです... しばらく おまちください...');
                     
                     setTimeout(async () => {
                         try {
@@ -750,7 +756,7 @@
                                 if (checkResult.status === 'success' && checkResult.output) {
                                     updateProgress(100, 'ModelsLab v6で ぬりえが かんせいしました！');
                                     generatedImageUrl = checkResult.output[0];
-                                    showResult(generatedImageUrl, 'ModelsLab-v6-Realtime', '⚡ 最新v6 Realtimeで高速生成完了！');
+                                    showResult(generatedImageUrl, 'ModelsLab-v6-2Step', '⚡ v6 Realtime 2段階プロセスで生成完了！');
                                 } else {
                                     throw new Error('処理がタイムアウトしました');
                                 }
@@ -791,6 +797,43 @@
                 loadingContainer.style.display = 'none';
                 generateButton.disabled = false;
                 progressContainer.style.display = 'none';
+            }
+        }
+
+        // ModelsLabに画像をアップロードしてURLを取得する関数
+        async function uploadImageToModelsLab(base64ImageData) {
+            console.log('Uploading image to ModelsLab...');
+            
+            const headers = new Headers();
+            headers.append("Content-Type", "application/json");
+
+            const requestBody = JSON.stringify({
+                "key": MODELSLAB_API_KEY,
+                "base64_image": base64ImageData
+            });
+
+            const requestOptions = {
+                method: 'POST',
+                headers: headers,
+                body: requestBody,
+                redirect: 'follow'
+            };
+
+            const response = await fetch("https://modelslab.com/api/v1/enterprise/upload_image", requestOptions);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Upload Error Response:', errorText);
+                throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Upload Response:', result);
+
+            if (result.status === 'success' && result.url) {
+                return result.url;
+            } else {
+                throw new Error(`Upload failed: ${result.message || 'Unknown upload error'}`);
             }
         }
 
