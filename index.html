@@ -407,14 +407,14 @@
 
         <!-- APIキー設定セクション -->
         <div class="step-container" id="apiKeyContainer">
-            <h2 class="step-title">🔑 Stable Diffusion API設定</h2>
+            <h2 class="step-title">🔑 ModelsLab API設定</h2>
             <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
-                Stable Diffusion APIの直接img2imgを使用<br>
+                ModelsLab（旧Stable Diffusion API）の直接img2imgを使用<br>
                 <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
             </p>
             
             <div style="margin-bottom: 20px;">
-                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="sd-...">
+                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="ModelsLab APIキー">
                 <button onclick="setApiKey()" class="api-key-button">🔧 設定</button>
             </div>
             
@@ -424,9 +424,10 @@
                 <summary>📖 APIキーの取得方法</summary>
                 <div class="api-help-content">
                     <ol style="color: #2F4F4F; line-height: 1.8;">
-                        <li><a href="https://stablediffusionapi.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">Stable Diffusion API</a> にアクセス</li>
-                        <li>「Get API Key」でアカウント作成</li>
-                        <li>ダッシュボードからAPIキーをコピー</li>
+                        <li><a href="https://modelslab.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">ModelsLab</a> にアクセス</li>
+                        <li>「Sign Up」でアカウント作成またはログイン</li>
+                        <li>ダッシュボードから「API Settings」または「API Key」をクリック</li>
+                        <li>表示されたAPIキーをコピー</li>
                         <li>上記の入力欄に貼り付けて「設定」をクリック</li>
                     </ol>
                     <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
@@ -465,7 +466,7 @@
         <!-- ローディング表示 -->
         <div class="loading" id="loadingContainer">
             <div class="spinner"></div>
-            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">Stable Diffusion APIで img2img実行中... ✨</p>
+            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">ModelsLab APIで img2img実行中... ✨</p>
             <div class="status-text" id="statusText">がぞうを アップロードしています...</div>
             
             <div class="progress-container" id="progressContainer">
@@ -524,14 +525,14 @@
                 return;
             }
             
-            if (!apiKey.startsWith('sd-') && apiKey.length < 20) {
-                showApiKeyStatus('正しいStable Diffusion APIキー形式ではありません', 'error');
+            if (apiKey.length < 10) {
+                showApiKeyStatus('正しいModelsLab APIキー形式ではありません', 'error');
                 return;
             }
             
             SD_API_KEY = apiKey;
             apiKeyInput.value = '';
-            showApiKeyStatus('Stable Diffusion APIキーが設定されました！ 写真を選択してください 🎉', 'success');
+            showApiKeyStatus('ModelsLab APIキーが設定されました！ 写真を選択してください 🎉', 'success');
             
             uploadContainer.style.opacity = '1';
             uploadContainer.style.pointerEvents = 'auto';
@@ -546,7 +547,7 @@
 
         function checkApiKey() {
             if (!SD_API_KEY) {
-                showError('まず Stable Diffusion APIキーを設定してください 🔑');
+                showError('まず ModelsLab APIキーを設定してください 🔑');
                 return false;
             }
             return true;
@@ -658,7 +659,7 @@
         generateButton.addEventListener('click', generateDirectAPIColoring);
 
         async function generateDirectAPIColoring() {
-            console.log('=== Stable Diffusion API 直接img2img ===');
+            console.log('=== ModelsLab API 直接img2img ===');
             
             if (!checkApiKey()) return;
             
@@ -923,7 +924,7 @@
         }
 
         // 初期化
-        console.log('Stable Diffusion API 直接版（ページ内完結）初期化完了');
+        console.log('ModelsLab API 直接版（ページ内完結）初期化完了');
     </script>
 </body>
 </html>
