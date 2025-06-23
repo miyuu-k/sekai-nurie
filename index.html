@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>せかいぬりえ - ModelsLab API版</title>
+    <title>せかいぬりえ - OpenAI版</title>
     <style>
         * {
             margin: 0;
@@ -381,23 +381,23 @@
     <div class="container">
         <div class="header">
             <h1 class="title">🌈 せかいぬりえ 🎨</h1>
-            <p class="subtitle">ModelsLab API v6版 - 最新高速API！</p>
+            <p class="subtitle">OpenAI GPT-4o + DALL-E 3版 - 高精度画像解析！</p>
         </div>
 
         <div class="info-box">
-            <h3>🚀 ModelsLab API v6版の特徴</h3>
+            <h3>🤖 OpenAI版の特徴</h3>
             <ul style="color: #2F4F4F; line-height: 1.6;">
-                <li><strong>最新v6 Realtime API</strong>: 高速レスポンス</li>
-                <li><strong>高品質img2img</strong>: 写真から直接線画生成</li>
-                <li><strong>完全ページ内完結</strong>: 外部サービス埋め込みなし</li>
-                <li><strong>シンプルフロー</strong>: アップロード→線画→完成</li>
+                <li><strong>GPT-4o画像解析</strong>: 写真を詳細に理解</li>
+                <li><strong>DALL-E 3生成</strong>: 最高品質のぬりえ</li>
+                <li><strong>完全ページ内完結</strong>: 外部サービス埋み込みなし</li>
+                <li><strong>正確な変換</strong>: 猫は猫、人は人として認識</li>
             </ul>
         </div>
 
         <div class="instructions">
             <h3>🎯 つかいかた</h3>
             <ol>
-                <li>ModelsLab APIキーを設定してね</li>
+                <li>OpenAI APIキーを設定してね</li>
                 <li>すきな写真を えらんでね</li>
                 <li>「ぬりえにする」ボタンを おしてね</li>
                 <li>ちょっと まっててね（30-60秒くらい）</li>
@@ -407,14 +407,14 @@
 
         <!-- APIキー設定セクション -->
         <div class="step-container" id="apiKeyContainer">
-            <h2 class="step-title">🔑 ModelsLab API v6設定</h2>
+            <h2 class="step-title">🔑 OpenAI API設定</h2>
             <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
-                ModelsLab の最新v6 Realtime APIを使用<br>
+                OpenAI GPT-4o で画像解析 → DALL-E 3 でぬりえ生成<br>
                 <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
             </p>
             
             <div style="margin-bottom: 20px;">
-                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="ModelsLab APIキー">
+                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="OpenAI APIキー (sk-proj-...)">
                 <button onclick="setApiKey()" class="api-key-button">🔧 設定</button>
             </div>
             
@@ -424,16 +424,17 @@
                 <summary>📖 APIキーの取得方法</summary>
                 <div class="api-help-content">
                     <ol style="color: #2F4F4F; line-height: 1.8;">
-                        <li><a href="https://modelslab.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">ModelsLab</a> にアクセス</li>
+                        <li><a href="https://platform.openai.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">OpenAI Platform</a> にアクセス</li>
                         <li>「Sign Up」でアカウント作成またはログイン</li>
-                        <li>ダッシュボードから「API Settings」または「API Key」をクリック</li>
-                        <li>表示されたAPIキーをコピー</li>
+                        <li>「API Keys」メニューをクリック</li>
+                        <li>「Create new secret key」で新しいキーを作成</li>
+                        <li>表示されたAPIキーをコピー（sk-proj-で始まります）</li>
                         <li>上記の入力欄に貼り付けて「設定」をクリック</li>
                     </ol>
                     <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
-                        💰 <strong>料金:</strong> 1回あたり約3-10円程度<br>
-                        🎁 <strong>初回特典:</strong> 無料クレジットで数回テスト可能<br>
-                        ⚡ <strong>v6 Realtime:</strong> 従来の3倍高速！
+                        💰 <strong>料金:</strong> 1回あたり約10-50円程度<br>
+                        🎁 <strong>初回特典:</strong> $5の無料クレジット<br>
+                        🤖 <strong>高精度:</strong> GPT-4oが写真を正確に理解！
                     </p>
                 </div>
             </details>
@@ -446,7 +447,7 @@
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📱</div>
                 <div class="upload-text">ここを タップして 写真を えらんでね</div>
-                <div style="font-size: 0.9rem; color: #666;">JPEG、PNG対応（512x512推奨）</div>
+                <div style="font-size: 0.9rem; color: #666;">JPEG、PNG対応（どんなサイズでもOK）</div>
                 <input type="file" id="fileInput" class="file-input" accept="image/*">
             </div>
 
@@ -459,7 +460,7 @@
 
             <div style="text-align: center; margin-top: 20px;">
                 <button class="button" id="generateButton" disabled>
-                    🚀 ModelsLab v6で ぬりえにする！
+                    🤖 GPT-4o + DALL-E 3で ぬりえにする！
                 </button>
             </div>
         </div>
@@ -467,7 +468,7 @@
         <!-- ローディング表示 -->
         <div class="loading" id="loadingContainer">
             <div class="spinner"></div>
-            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">ModelsLab v6 Realtime APIで実行中... ⚡</p>
+            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">OpenAI APIで実行中... 🤖</p>
             <div class="status-text" id="statusText">がぞうを アップロードしています...</div>
             
             <div class="progress-container" id="progressContainer">
@@ -477,7 +478,7 @@
 
         <!-- 結果表示 -->
         <div class="step-container result-container" id="resultContainer">
-            <h2 class="step-title">🎉 ModelsLab v6成功！</h2>
+            <h2 class="step-title">🎉 OpenAI成功！</h2>
             <div id="resultImage">
                 <!-- 生成されたぬりえがここに表示される -->
             </div>
@@ -499,7 +500,7 @@
         // グローバル変数
         let selectedFile = null;
         let generatedImageUrl = null;
-        let MODELSLAB_API_KEY = '';
+        let OPENAI_API_KEY = '';
 
         // DOM要素の取得
         const uploadArea = document.getElementById('uploadArea');
@@ -522,18 +523,18 @@
             const statusDiv = document.getElementById('apiKeyStatus');
             
             if (!apiKey) {
-                showApiKeyStatus('ModelsLab APIキーを入力してください', 'error');
+                showApiKeyStatus('OpenAI APIキーを入力してください', 'error');
                 return;
             }
             
-            if (apiKey.length < 10) {
-                showApiKeyStatus('正しいModelsLab APIキー形式ではありません', 'error');
+            if (!apiKey.startsWith('sk-')) {
+                showApiKeyStatus('正しいOpenAI APIキー形式ではありません（sk-で始まる必要があります）', 'error');
                 return;
             }
             
-            MODELSLAB_API_KEY = apiKey;
+            OPENAI_API_KEY = apiKey;
             apiKeyInput.value = '';
-            showApiKeyStatus('ModelsLab API v6キーが設定されました！ 写真を選択してください 🚀', 'success');
+            showApiKeyStatus('OpenAI APIキーが設定されました！ 写真を選択してください 🤖', 'success');
             
             uploadContainer.style.opacity = '1';
             uploadContainer.style.pointerEvents = 'auto';
@@ -547,8 +548,8 @@
         }
 
         function checkApiKey() {
-            if (!MODELSLAB_API_KEY) {
-                showError('まず ModelsLab APIキーを設定してください 🔑');
+            if (!OPENAI_API_KEY) {
+                showError('まず OpenAI APIキーを設定してください 🔑');
                 return false;
             }
             return true;
@@ -596,9 +597,9 @@
                 return;
             }
 
-            // ファイルサイズチェック (5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                showError('ファイルが大きすぎます（5MB以下にしてください）');
+            // ファイルサイズチェック (20MB)
+            if (file.size > 20 * 1024 * 1024) {
+                showError('ファイルが大きすぎます（20MB以下にしてください）');
                 return;
             }
 
@@ -615,7 +616,7 @@
                 previewContainer.innerHTML = `
                     <img src="${e.target.result}" alt="選択した画像" class="image-preview" id="originalImage">
                     <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
-                        この写真で ModelsLab v6ぬりえを つくるよ！ 🚀
+                        この写真を GPT-4o + DALL-E 3で ぬりえにするよ！ 🤖
                     </p>
                 `;
             };
@@ -643,7 +644,7 @@
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = () => resolve(reader.result); // data:image/jpeg;base64,xxxxx 形式で返す
+                reader.onload = () => resolve(reader.result);
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
@@ -656,11 +657,11 @@
             statusText.textContent = message;
         }
 
-        // メイン処理：ModelsLab API 2段階img2img
-        generateButton.addEventListener('click', generateModelsLabColoring);
+        // メイン処理：OpenAI GPT-4o + DALL-E 3
+        generateButton.addEventListener('click', generateOpenAIColoring);
 
-        async function generateModelsLabColoring() {
-            console.log('=== ModelsLab API 2段階img2img ===');
+        async function generateOpenAIColoring() {
+            console.log('=== OpenAI GPT-4o + DALL-E 3 ===');
             
             if (!checkApiKey()) return;
             
@@ -681,123 +682,28 @@
                 // ステップ1: Base64エンコード
                 updateProgress(10, 'がぞうを エンコードしています...');
                 const base64DataUrl = await fileToBase64(selectedFile);
-                // data:image/xxx;base64,xxxxxx から base64部分のみを抽出
-                const base64Only = base64DataUrl.split(',')[1];
 
-                // ステップ2: 画像をModelsLabにアップロードしてURLを取得
-                updateProgress(25, 'がぞうを ModelsLabに アップロードしています...');
-                let imageUrl;
-                
-                try {
-                    // まずbase64_cropエンドポイントを試す
-                    imageUrl = await uploadImageToModelsLab(base64Only);
-                } catch (uploadError) {
-                    console.warn('base64_crop failed, trying Community Models endpoint:', uploadError);
-                    
-                    // アップロードが失敗した場合、Community Modelsエンドポイントを試す
-                    updateProgress(40, 'Community Modelsエンドポイントで しょりしています...');
-                    return await generateWithCommunityModels(base64DataUrl);
-                }
+                // ステップ2: GPT-4oで画像解析
+                updateProgress(30, 'GPT-4oが がぞうを かいせきしています...');
+                const imageDescription = await analyzeImageWithGPT4o(base64DataUrl);
 
-                // ステップ3: 取得したURLでimg2img実行
-                updateProgress(50, 'ModelsLab v6 Realtime APIで ぬりえを せいせいしています...');
+                // ステップ3: DALL-E 3でぬりえ生成
+                updateProgress(70, 'DALL-E 3が ぬりえを せいせいしています...');
+                const coloringImageUrl = await generateColoringWithDALLE3(imageDescription);
 
-                const headers = new Headers();
-                headers.append("Content-Type", "application/json");
-
-                const requestBody = JSON.stringify({
-                    "key": MODELSLAB_API_KEY,
-                    "prompt": "coloring book page, black and white line art, simple outlines, thick black lines, clean drawing, children's coloring book style, white background, no colors, no shading, line drawing",
-                    "negative_prompt": "color, colored, complex details, photorealistic, shadows, shading, gradients, text, watermark, blurry, messy lines, realistic, photography, noise, background pattern",
-                    "init_image": imageUrl,
-                    "width": "512",
-                    "height": "512",
-                    "samples": "1",
-                    "temp": false,
-                    "safety_checker": false,
-                    "strength": 0.8,
-                    "seed": null,
-                    "webhook": null,
-                    "track_id": null
-                });
-
-                const requestOptions = {
-                    method: 'POST',
-                    headers: headers,
-                    body: requestBody,
-                    redirect: 'follow'
-                };
-
-                console.log('Sending img2img request to ModelsLab v6 Realtime API...');
-                
-                const response = await fetch("https://modelslab.com/api/v6/realtime/img2img", requestOptions);
-                
-                updateProgress(75, 'ModelsLab v6が がぞうを しょりしています...');
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('ModelsLab API Error Response:', errorText);
-                    throw new Error(`API Error: ${response.status} - ${errorText}`);
-                }
-
-                const result = await response.json();
-                console.log('ModelsLab API Response:', result);
-
-                if (result.status === 'success' && result.output && result.output.length > 0) {
-                    updateProgress(100, 'ModelsLab v6で ぬりえが かんせいしました！');
-                    
-                    generatedImageUrl = result.output[0];
-                    
-                    if (!generatedImageUrl) {
-                        throw new Error('APIから画像URLが返されませんでした');
-                    }
-                    
-                    showResult(generatedImageUrl, 'ModelsLab-v6-2Step', '⚡ v6 Realtime 2段階プロセスで生成完了！');
-                } else if (result.status === 'error') {
-                    throw new Error(`API Error: ${result.message || result.error || 'Unknown error'}`);
-                } else if (result.status === 'processing') {
-                    // v6 Realtimeは通常即座に結果を返すが、念のため処理中対応
-                    updateProgress(90, 'しょりちゅうです... しばらく おまちください...');
-                    
-                    setTimeout(async () => {
-                        try {
-                            // IDがある場合は結果を再取得
-                            if (result.id) {
-                                const checkResult = await checkProcessingStatus(result.id);
-                                if (checkResult.status === 'success' && checkResult.output) {
-                                    updateProgress(100, 'ModelsLab v6で ぬりえが かんせいしました！');
-                                    generatedImageUrl = checkResult.output[0];
-                                    showResult(generatedImageUrl, 'ModelsLab-v6-2Step', '⚡ v6 Realtime 2段階プロセスで生成完了！');
-                                } else {
-                                    throw new Error('処理がタイムアウトしました');
-                                }
-                            } else {
-                                throw new Error('処理IDが取得できませんでした');
-                            }
-                        } catch (error) {
-                            console.error('Status check error:', error);
-                            showError(`処理確認エラー: ${error.message}`);
-                        } finally {
-                            loadingContainer.style.display = 'none';
-                            generateButton.disabled = false;
-                            progressContainer.style.display = 'none';
-                        }
-                    }, 3000); // v6は高速なので3秒で再確認
-                    
-                    return; // この場合はfinally句を実行しない
-                } else {
-                    throw new Error(`Unexpected response: ${JSON.stringify(result)}`);
-                }
+                updateProgress(100, 'OpenAIで ぬりえが かんせいしました！');
+                generatedImageUrl = coloringImageUrl;
+                showResult(coloringImageUrl, 'OpenAI-GPT4o-DALLE3', '🤖 GPT-4o解析 + DALL-E 3で高精度生成完了！');
 
             } catch (error) {
-                console.error('ModelsLab v6 API エラー:', error);
+                console.error('OpenAI API エラー:', error);
                 
                 let errorMessage = error.message;
                 if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                    errorMessage = 'APIキーが正しく設定されていません 🔑\n\nModelsLabのAPIキーを確認してください';
-                } else if (error.message.includes('402') || error.message.includes('payment') || error.message.includes('billing')) {
+                    errorMessage = 'APIキーが正しく設定されていません 🔑\n\nOpenAIのAPIキーを確認してください';
+                } else if (error.message.includes('402') || error.message.includes('insufficient_quota')) {
                     errorMessage = 'アカウントの残高が不足しています 💳\n\n残高を確認してください';
-                } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+                } else if (error.message.includes('429') || error.message.includes('rate_limit')) {
                     errorMessage = 'API使用量の上限に達しました ⏰\n\nしばらく待ってから再試行してください';
                 } else if (error.message.includes('network') || error.message.includes('fetch')) {
                     errorMessage = 'ネットワーク接続に問題があります 🌐\n\nインターネット接続を確認してください';
@@ -811,73 +717,100 @@
             }
         }
 
-        // ModelsLabに画像をアップロードしてURLを取得する関数
-        async function uploadImageToModelsLab(base64ImageData) {
-            console.log('Uploading image to ModelsLab using base64_crop...');
-            
+        // GPT-4oで画像解析
+        async function analyzeImageWithGPT4o(base64DataUrl) {
             const headers = new Headers();
             headers.append("Content-Type", "application/json");
-
-            // data:image/xxx;base64,の形式に戻す
-            const mimeType = selectedFile.type || 'image/png';
-            const base64WithPrefix = `data:${mimeType};base64,${base64ImageData}`;
+            headers.append("Authorization", `Bearer ${OPENAI_API_KEY}`);
 
             const requestBody = JSON.stringify({
-                "key": MODELSLAB_API_KEY,
-                "image": base64WithPrefix,
-                "crop": "false"  // クロップしない
+                "model": "gpt-4o",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "この画像を詳しく観察して、塗り絵にするのに最適な説明文を作成してください。対象物の種類、特徴、ポーズ、環境などを含めて、線画として表現しやすい要素を重視してください。"
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": base64DataUrl
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "max_tokens": 300
             });
 
-            const requestOptions = {
+            const response = await fetch("https://api.openai.com/v1/chat/completions", {
                 method: 'POST',
                 headers: headers,
-                body: requestBody,
-                redirect: 'follow'
-            };
+                body: requestBody
+            });
 
-            const response = await fetch("https://modelslab.com/api/v3/base64_crop", requestOptions);
-            
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Upload Error Response:', errorText);
-                throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+                console.error('GPT-4o Error Response:', errorText);
+                throw new Error(`GPT-4o Error: ${response.status} - ${errorText}`);
             }
 
             const result = await response.json();
-            console.log('Upload Response:', result);
+            console.log('GPT-4o Analysis:', result);
 
-            if (result.status === 'success' && result.link) {
-                return result.link;
-            } else if (result.status === 'success' && result.url) {
-                return result.url;
+            if (result.choices && result.choices.length > 0) {
+                return result.choices[0].message.content;
             } else {
-                throw new Error(`Upload failed: ${result.message || result.error || 'Unknown upload error'}`);
+                throw new Error('GPT-4oから適切なレスポンスが得られませんでした');
             }
         }
 
-        // 処理状況確認関数（v6では通常不要だが念のため）
-        async function checkProcessingStatus(processId) {
-            const response = await fetch(`https://modelslab.com/api/v6/realtime/fetch/${processId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    "key": MODELSLAB_API_KEY
-                })
+        // DALL-E 3でぬりえ生成
+        async function generateColoringWithDALLE3(imageDescription) {
+            const headers = new Headers();
+            headers.append("Content-Type", "application/json");
+            headers.append("Authorization", `Bearer ${OPENAI_API_KEY}`);
+
+            const coloringPrompt = `Create a coloring book page based on this description: "${imageDescription}". 
+            Style: Simple black and white line art, thick clear outlines, no shading, no colors, clean drawing suitable for children's coloring book, white background, minimalist style, easy to color.`;
+
+            const requestBody = JSON.stringify({
+                "model": "dall-e-3",
+                "prompt": coloringPrompt,
+                "n": 1,
+                "size": "1024x1024",
+                "quality": "standard",
+                "style": "natural"
             });
-            
+
+            const response = await fetch("https://api.openai.com/v1/images/generations", {
+                method: 'POST',
+                headers: headers,
+                body: requestBody
+            });
+
             if (!response.ok) {
-                throw new Error(`Status check failed: ${response.status}`);
+                const errorText = await response.text();
+                console.error('DALL-E 3 Error Response:', errorText);
+                throw new Error(`DALL-E 3 Error: ${response.status} - ${errorText}`);
             }
-            
-            return await response.json();
+
+            const result = await response.json();
+            console.log('DALL-E 3 Response:', result);
+
+            if (result.data && result.data.length > 0) {
+                return result.data[0].url;
+            } else {
+                throw new Error('DALL-E 3から画像URLが返されませんでした');
+            }
         }
 
         function showResult(imageUrl, model, message) {
             document.getElementById('resultImage').innerHTML = `
                 <div style="margin-bottom: 20px;">
-                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🚀 ModelsLab v6で成功したよ！</p>
+                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🤖 OpenAIで成功したよ！</p>
                     <p style="color: #FF69B4; font-size: 1rem; margin-bottom: 10px;">${message}</p>
                     
                     <div class="comparison-container">
@@ -892,7 +825,7 @@
                     </div>
                     
                     <p style="color: #8B4513; font-size: 1rem; margin-top: 15px;">
-                        ModelsLab v6 Realtimeで つくった 高速ぬりえだよ！ 🌈<br>
+                        GPT-4o + DALL-E 3で つくった 高精度ぬりえだよ！ 🌈<br>
                         <small>(${model}で せいせい)</small>
                     </p>
                 </div>
@@ -912,7 +845,7 @@
             printWindow.document.write(`
                 <html>
                     <head>
-                        <title>せかいぬりえ - ModelsLab v6版 プリント</title>
+                        <title>せかいぬりえ - OpenAI版 プリント</title>
                         <style>
                             body { 
                                 margin: 0; 
@@ -936,9 +869,9 @@
                         </style>
                     </head>
                     <body>
-                        <h1>🌈 せかいぬりえ - ModelsLab v6版 🚀</h1>
-                        <img src="${generatedImageUrl}" alt="ModelsLab v6ぬりえ">
-                        <p style="margin-top: 20px; color: #8B4513;">最新v6 Realtimeで つくった ぬりえだよ！</p>
+                        <h1>🌈 せかいぬりえ - OpenAI版 🤖</h1>
+                        <img src="${generatedImageUrl}" alt="OpenAIぬりえ">
+                        <p style="margin-top: 20px; color: #8B4513;">GPT-4o + DALL-E 3で つくった ぬりえだよ！</p>
                     </body>
                 </html>
             `);
@@ -960,12 +893,12 @@
             // 画像をダウンロード
             const link = document.createElement('a');
             link.href = generatedImageUrl;
-            link.download = `せかいぬりえ_ModelsLab-v6_${new Date().getTime()}.png`;
+            link.download = `せかいぬりえ_OpenAI_${new Date().getTime()}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            showSuccess('ModelsLab v6ぬりえを ダウンロードしました！ 📥');
+            showSuccess('OpenAIぬりえを ダウンロードしました！ 📥');
         }
 
         function resetApp() {
@@ -983,7 +916,7 @@
         }
 
         // 初期化
-        console.log('ModelsLab API v6 Realtime版 初期化完了');
+        console.log('OpenAI GPT-4o + DALL-E 3版 初期化完了');
     </script>
 </body>
 </html>
