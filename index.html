@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>せかいぬりえ - 写真忠実版</title>
+    <title>せかいぬりえ - エッジ検出版</title>
     <style>
         * {
             margin: 0;
@@ -132,6 +132,7 @@
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin: 5px;
         }
 
         .button:hover {
@@ -164,44 +165,6 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-
-        .progress-container {
-            width: 100%;
-            background-color: #FFE4E1;
-            border-radius: 25px;
-            padding: 3px;
-            margin: 20px 0;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 20px;
-            background: linear-gradient(45deg, #FF69B4, #FFB6C1);
-            border-radius: 25px;
-            transition: width 0.3s ease;
-            text-align: center;
-            line-height: 20px;
-            color: white;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .result-container {
-            display: none;
-            text-align: center;
-        }
-
-        .print-button {
-            background: linear-gradient(45deg, #32CD32, #98FB98);
-            margin-top: 20px;
-        }
-
-        .download-button {
-            background: linear-gradient(45deg, #4169E1, #87CEEB);
-            margin-top: 10px;
-            margin-left: 10px;
         }
 
         .error-message {
@@ -249,103 +212,86 @@
             margin-bottom: 8px;
         }
 
-        .status-text {
-            font-size: 1.1rem;
-            color: #FF69B4;
-            margin-top: 10px;
-        }
-
-        /* APIキー設定用スタイル */
-        .api-key-input {
-            width: 70%;
-            padding: 12px;
-            border: 3px solid #FFB6C1;
-            border-radius: 10px;
-            font-size: 1rem;
-            margin-right: 10px;
-            font-family: monospace;
-        }
-
-        .api-key-button {
-            background: linear-gradient(45deg, #32CD32, #98FB98);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: inherit;
-        }
-
-        .api-status {
-            padding: 10px;
-            border-radius: 8px;
-            margin: 15px 0;
+        .result-container {
             display: none;
-            font-weight: bold;
+            text-align: center;
         }
 
-        .api-status.success {
-            background: #E6FFE6;
-            color: #006400;
-            border: 2px solid #90EE90;
+        .print-button {
+            background: linear-gradient(45deg, #32CD32, #98FB98);
+            margin-top: 20px;
         }
 
-        .api-status.error {
-            background: #FFE4E6;
-            color: #D8000C;
-            border: 2px solid #FFB6C1;
-        }
-
-        .api-help {
-            margin-top: 15px;
-        }
-
-        .api-help summary {
-            color: #FF69B4;
-            cursor: pointer;
-            font-weight: bold;
-            padding: 5px;
-        }
-
-        .api-help-content {
+        .download-button {
+            background: linear-gradient(45deg, #4169E1, #87CEEB);
             margin-top: 10px;
-            padding: 15px;
-            background: #F0F8FF;
-            border-radius: 10px;
-            border: 2px solid #87CEEB;
+            margin-left: 10px;
         }
 
-        /* 写真忠実性指標 */
-        .fidelity-indicator {
+        .controls {
             background: #F0F8FF;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            border: 2px solid #87CEEB;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 3px solid #87CEEB;
         }
 
-        .fidelity-bars {
+        .control-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .control-label {
+            display: block;
+            color: #4682B4;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .control-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            margin-bottom: 5px;
+        }
+
+        .control-value {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .canvas-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .hidden-canvas {
+            display: none;
+        }
+
+        .comparison {
             display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
         }
 
-        .fidelity-item {
+        .comparison-item {
             text-align: center;
             flex: 1;
-            margin: 0 5px;
+            min-width: 200px;
         }
 
-        .fidelity-bar {
-            height: 8px;
-            border-radius: 4px;
-            margin: 5px auto;
+        .comparison-image {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 10px;
+            border: 2px solid #FFB6C1;
+            margin-bottom: 10px;
         }
-
-        .photo-accuracy { background: #4169E1; }
-        .line-precision { background: #32CD32; }
-        .detail-preservation { background: #FF6347; }
 
         @media (max-width: 600px) {
             .title {
@@ -365,10 +311,8 @@
                 margin-top: 10px;
             }
 
-            .api-key-input {
-                width: 100%;
-                margin-bottom: 10px;
-                margin-right: 0;
+            .comparison {
+                flex-direction: column;
             }
         }
     </style>
@@ -376,85 +320,28 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="title">📷 せかいぬりえ 🎨</h1>
-            <p class="subtitle">写真に忠実で 正確な線画の ぬりえを つくろう！</p>
-            
-            <!-- 写真忠実性指標 -->
-            <div class="fidelity-indicator">
-                <h4 style="color: #4682B4; margin-bottom: 10px;">📸 写真忠実性モード</h4>
-                <div class="fidelity-bars">
-                    <div class="fidelity-item">
-                        <div style="font-size: 0.9rem; color: #666;">写真精度</div>
-                        <div class="fidelity-bar photo-accuracy" style="width: 95%;"></div>
-                        <div style="font-size: 0.8rem; color: #333;">95%</div>
-                    </div>
-                    <div class="fidelity-item">
-                        <div style="font-size: 0.9rem; color: #666;">線の正確性</div>
-                        <div class="fidelity-bar line-precision" style="width: 90%;"></div>
-                        <div style="font-size: 0.8rem; color: #333;">90%</div>
-                    </div>
-                    <div class="fidelity-item">
-                        <div style="font-size: 0.9rem; color: #666;">細部保持</div>
-                        <div class="fidelity-bar detail-preservation" style="width: 85%;"></div>
-                        <div style="font-size: 0.8rem; color: #333;">85%</div>
-                    </div>
-                </div>
-            </div>
+            <h1 class="title">📸 せかいぬりえ 🎨</h1>
+            <p class="subtitle">写真から直接 ぬりえ線を 抽出するよ！</p>
         </div>
 
         <div class="instructions">
-            <h3>📸 つかいかた（写真忠実版）</h3>
+            <h3>🎯 つかいかた（エッジ検出版）</h3>
             <ol>
-                <li>OpenAI APIキーを設定してね</li>
-                <li>すきな写真を えらんでね</li>
-                <li>「写真通りの正確なぬりえにする」ボタンを おしてね</li>
-                <li>ちょっと まっててね（60秒くらい - 写真解析＋正確な線画生成）</li>
-                <li>できあがったら プリントして ぬりえを たのしもう！</li>
+                <li>写真を選んでね</li>
+                <li>線の太さや強さを調整してね</li>
+                <li>「ぬりえ線を抽出」ボタンを押してね</li>
+                <li>気に入ったらプリント・ダウンロードしてね</li>
             </ol>
         </div>
 
-        <!-- APIキー設定セクション -->
-        <div class="step-container" id="apiKeyContainer">
-            <h2 class="step-title">🔑 OpenAI APIキー設定</h2>
-            <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
-                写真の構図・座標・細部を正確に再現した線画ぬりえを生成します。<br>
-                <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
-            </p>
-            
-            <div style="margin-bottom: 20px;">
-                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="sk-proj-...">
-                <button onclick="setApiKey()" class="api-key-button">🔧 設定</button>
-            </div>
-            
-            <div id="apiKeyStatus" class="api-status"></div>
-            
-            <details class="api-help">
-                <summary>📖 APIキーの取得方法</summary>
-                <div class="api-help-content">
-                    <ol style="color: #2F4F4F; line-height: 1.8;">
-                        <li><a href="https://platform.openai.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">OpenAI Platform</a> にアクセス</li>
-                        <li>アカウントを作成・ログイン</li>
-                        <li>左メニューの「API Keys」をクリック</li>
-                        <li>「Create new secret key」をクリック</li>
-                        <li>生成されたキー（sk-proj-で始まる）をコピー</li>
-                        <li>上記の入力欄に貼り付けて「設定」をクリック</li>
-                    </ol>
-                    <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
-                        ⚠️ <strong>重要:</strong> APIキーは大切に管理してください。他人と共有しないでください。<br>
-                        💰 DALL-E 3の利用料金: 1回あたり約3-8円程度
-                    </p>
-                </div>
-            </details>
-        </div>
-
         <!-- 画像アップロードセクション -->
-        <div class="step-container" id="uploadContainer" style="opacity: 0.5; pointer-events: none;">
+        <div class="step-container">
             <h2 class="step-title">📸 写真を えらんでね</h2>
             
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📱</div>
                 <div class="upload-text">ここを タップして 写真を えらんでね</div>
-                <div style="font-size: 0.9rem; color: #666;">JPEG、PNG、HEIC対応</div>
+                <div style="font-size: 0.9rem; color: #666;">JPEG、PNG対応</div>
                 <input type="file" id="fileInput" class="file-input" accept="image/*">
             </div>
 
@@ -464,10 +351,33 @@
             <div id="previewContainer" style="text-align: center; margin-top: 20px;">
                 <!-- プレビュー画像がここに表示される -->
             </div>
+        </div>
+
+        <!-- コントロールセクション -->
+        <div class="step-container controls" id="controlsContainer" style="display: none;">
+            <h2 class="step-title">⚙️ ぬりえ線の調整</h2>
+            
+            <div class="control-group">
+                <label class="control-label">線の強さ（エッジ検出の感度）</label>
+                <input type="range" id="edgeStrength" class="control-slider" min="50" max="200" value="100">
+                <div class="control-value">現在の値: <span id="edgeStrengthValue">100</span></div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">線の太さ</label>
+                <input type="range" id="lineThickness" class="control-slider" min="1" max="5" value="2">
+                <div class="control-value">現在の値: <span id="lineThicknessValue">2</span></div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">ノイズ除去</label>
+                <input type="range" id="noiseReduction" class="control-slider" min="0" max="5" value="2">
+                <div class="control-value">現在の値: <span id="noiseReductionValue">2</span></div>
+            </div>
 
             <div style="text-align: center; margin-top: 20px;">
-                <button class="button" id="generateButton" disabled>
-                    📷 写真通りの正確なぬりえにする！
+                <button class="button" id="generateButton" onclick="processImage()">
+                    🎨 ぬりえ線を抽出！
                 </button>
             </div>
         </div>
@@ -475,20 +385,17 @@
         <!-- ローディング表示 -->
         <div class="loading" id="loadingContainer">
             <div class="spinner"></div>
-            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">AI が写真を詳細解析して正確な線画を作っているよ... 📸</p>
-            <div class="status-text" id="statusText">写真の構図と座標を分析しています...</div>
-            
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-bar" id="progressBar">0%</div>
-            </div>
+            <p style="font-size: 1.2rem; color: #FF69B4;">画像を処理中...</p>
         </div>
 
         <!-- 結果表示 -->
         <div class="step-container result-container" id="resultContainer">
-            <h2 class="step-title">🎉 写真忠実なぬりえが できあがり！</h2>
-            <div id="resultImage">
-                <!-- 生成されたぬりえがここに表示される -->
+            <h2 class="step-title">🎉 ぬりえ線が できあがり！</h2>
+            
+            <div class="comparison" id="comparisonContainer">
+                <!-- 比較画像がここに表示される -->
             </div>
+
             <div>
                 <button class="button print-button" onclick="printColoring()">
                     🖨️ プリントする
@@ -501,66 +408,48 @@
                 🔄 あたらしく つくる
             </button>
         </div>
+
+        <!-- 隠しキャンバス -->
+        <canvas id="sourceCanvas" class="hidden-canvas"></canvas>
+        <canvas id="grayCanvas" class="hidden-canvas"></canvas>
+        <canvas id="edgeCanvas" class="hidden-canvas"></canvas>
+        <canvas id="resultCanvas" class="hidden-canvas"></canvas>
     </div>
 
     <script>
         // グローバル変数
         let selectedFile = null;
-        let generatedImageUrl = null;
-        let OPENAI_API_KEY = '';
+        let originalImage = null;
+        let processedImageUrl = null;
 
         // DOM要素の取得
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const previewContainer = document.getElementById('previewContainer');
-        const generateButton = document.getElementById('generateButton');
+        const controlsContainer = document.getElementById('controlsContainer');
         const loadingContainer = document.getElementById('loadingContainer');
         const resultContainer = document.getElementById('resultContainer');
         const errorMessage = document.getElementById('errorMessage');
         const successMessage = document.getElementById('successMessage');
-        const statusText = document.getElementById('statusText');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('progressBar');
-        const uploadContainer = document.getElementById('uploadContainer');
+        const comparisonContainer = document.getElementById('comparisonContainer');
 
-        // APIキー管理
-        function setApiKey() {
-            const apiKeyInput = document.getElementById('apiKeyInput');
-            const apiKey = apiKeyInput.value.trim();
-            const statusDiv = document.getElementById('apiKeyStatus');
-            
-            if (!apiKey) {
-                showApiKeyStatus('APIキーを入力してください', 'error');
-                return;
-            }
-            
-            if (!apiKey.startsWith('sk-')) {
-                showApiKeyStatus('正しいAPIキー形式ではありません（sk-で始まる必要があります）', 'error');
-                return;
-            }
-            
-            OPENAI_API_KEY = apiKey;
-            apiKeyInput.value = '';
-            showApiKeyStatus('APIキーが設定されました！ 写真を選択してください 🎉', 'success');
-            
-            uploadContainer.style.opacity = '1';
-            uploadContainer.style.pointerEvents = 'auto';
-        }
+        // スライダー要素
+        const edgeStrengthSlider = document.getElementById('edgeStrength');
+        const lineThicknessSlider = document.getElementById('lineThickness');
+        const noiseReductionSlider = document.getElementById('noiseReduction');
 
-        function showApiKeyStatus(message, type) {
-            const statusDiv = document.getElementById('apiKeyStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.textContent = message;
-            statusDiv.className = `api-status ${type}`;
-        }
+        // スライダー値表示の更新
+        edgeStrengthSlider.addEventListener('input', (e) => {
+            document.getElementById('edgeStrengthValue').textContent = e.target.value;
+        });
 
-        function checkApiKey() {
-            if (!OPENAI_API_KEY) {
-                showError('まず OpenAI APIキーを設定してください 🔑');
-                return false;
-            }
-            return true;
-        }
+        lineThicknessSlider.addEventListener('input', (e) => {
+            document.getElementById('lineThicknessValue').textContent = e.target.value;
+        });
+
+        noiseReductionSlider.addEventListener('input', (e) => {
+            document.getElementById('noiseReductionValue').textContent = e.target.value;
+        });
 
         // ファイルアップロード関連
         uploadArea.addEventListener('click', () => fileInput.click());
@@ -596,38 +485,45 @@
         }
 
         function handleFile(file) {
-            console.log('Selected file:', file.name, file.type, file.size);
-
             // ファイル形式チェック
             if (!file.type.startsWith('image/')) {
                 showError('画像ファイルを選択してください');
                 return;
             }
 
-            // ファイルサイズチェック (10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                showError('ファイルが大きすぎます（10MB以下にしてください）');
+            // ファイルサイズチェック (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showError('ファイルが大きすぎます（5MB以下にしてください）');
                 return;
             }
 
             selectedFile = file;
             hideError();
-            showPreview(file);
-            showSuccess('写真が選択されました！ 📸');
-            generateButton.disabled = false;
+            loadImage(file);
         }
 
-        function showPreview(file) {
+        function loadImage(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                previewContainer.innerHTML = `
-                    <img src="${e.target.result}" alt="選択した画像" class="image-preview">
-                    <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
-                        この写真で 正確な線画ぬりえを つくるよ！ 📷
-                    </p>
-                `;
+                const img = new Image();
+                img.onload = function() {
+                    originalImage = img;
+                    showPreview(e.target.result);
+                    controlsContainer.style.display = 'block';
+                    showSuccess('写真が読み込まれました！調整して「ぬりえ線を抽出」を押してね 🎨');
+                };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        function showPreview(imageSrc) {
+            previewContainer.innerHTML = `
+                <img src="${imageSrc}" alt="選択した画像" class="image-preview">
+                <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
+                    この写真からぬりえ線を抽出するよ！ 📸
+                </p>
+            `;
         }
 
         function showError(message) {
@@ -647,341 +543,266 @@
             successMessage.style.display = 'none';
         }
 
-        // ファイルをBase64に変換
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // プログレスバー更新
-        function updateProgress(percent, message) {
-            progressBar.style.width = percent + '%';
-            progressBar.textContent = percent + '%';
-            statusText.textContent = message;
-        }
-
-        // メイン処理：写真忠実なぬりえ生成
-        generateButton.addEventListener('click', generateRealisticColoring);
-
-        async function generateRealisticColoring() {
-            console.log('=== 写真忠実版（精度95% + 線正確性90% + 細部保持85%）開始 ===');
-            
-            if (!checkApiKey()) return;
-            
-            if (!selectedFile) {
-                showError('まず 写真を選択してください！');
+        // 画像処理メイン関数
+        function processImage() {
+            if (!originalImage) {
+                showError('まず画像を選択してください');
                 return;
             }
 
-            // ローディング表示
             loadingContainer.style.display = 'block';
-            generateButton.disabled = true;
             resultContainer.style.display = 'none';
-            hideError();
-            progressContainer.style.display = 'block';
-            updateProgress(0, '写真をアップロードしています...');
 
-            try {
-                // 画像をBase64に変換
-                updateProgress(5, '写真を準備しています...');
-                const imageData = await fileToBase64(selectedFile);
-                
-                // === STAGE 1: 写真の詳細構造・座標解析 ===
-                updateProgress(15, '段階1: 写真の座標・構図・細部を詳細分析しています... 🔍');
-                console.log('STAGE 1: 写真詳細構造解析...');
-                
-                const structureResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `この写真を95%の精度で忠実に再現するため、詳細な構造・座標分析を行ってください：
+            // 少し遅延させてローディング表示を確実に
+            setTimeout(() => {
+                try {
+                    const edgeStrength = parseInt(edgeStrengthSlider.value);
+                    const lineThickness = parseInt(lineThicknessSlider.value);
+                    const noiseReduction = parseInt(noiseReductionSlider.value);
 
-【写真精度95%のための分析】
-1. 正確な構図・座標：
-   - 被写体の正確な位置（画面内の座標割合）
-   - 体の向き・角度・ポーズの詳細
-   - 顔の向き、目線の方向
-   - 四肢の位置・曲がり具合
+                    // エッジ検出処理
+                    const coloringImage = createColoringPage(originalImage, {
+                        edgeStrength,
+                        lineThickness,
+                        noiseReduction
+                    });
 
-2. 解剖学的正確性：
-   - 実際の体型・プロポーション
-   - 関節の位置と角度
-   - 筋肉の流れ・体の曲線
-   - 毛並みの流れる方向
+                    // 結果表示
+                    showResult(originalImage.src, coloringImage);
 
-3. 空間構成の詳細：
-   - 前景・中景・背景の層構造
-   - 奥行き感・遠近法
-   - 光の当たり方・影の落ち方
-   - 各オブジェクトの相対的位置関係
-
-4. 細部の特徴：
-   - 模様・パターンの正確な配置
-   - 質感の種類（毛、布、金属等）
-   - 小物・装飾品の位置
-   - 表情の詳細（目の形、口の開き具合等）
-
-【重要】
-- カートゥーン化・デフォルメは一切行わない
-- 写真の情報を正確に記録することが最優先
-- 線画化後も認識可能な精度を保つ
-
-詳細に分析してください。`
-                                    },
-                                    {
-                                        type: "image_url",
-                                        image_url: {
-                                            url: imageData
-                                        }
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 500
-                    }),
-                });
-
-                let structureAnalysis = "detailed photo analysis";
-                if (structureResponse.ok) {
-                    const structureResult = await structureResponse.json();
-                    if (structureResult.choices && structureResult.choices[0]) {
-                        structureAnalysis = structureResult.choices[0].message.content.trim();
-                        console.log('STAGE 1 - 詳細構造分析:', structureAnalysis);
-                    }
+                } catch (error) {
+                    console.error('画像処理エラー:', error);
+                    showError('画像処理中にエラーが発生しました');
+                } finally {
+                    loadingContainer.style.display = 'none';
                 }
-
-                // === STAGE 2: 線画技術指定・精密線画設計 ===
-                updateProgress(40, '段階2: 正確な線画の技術仕様を設計しています... ✏️');
-                console.log('STAGE 2: 線画技術設計...');
-                
-                const lineDesignResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `以下の写真分析から、90%の線正確性を保つ線画技術仕様を設計してください：
-
-【写真分析結果】
-${structureAnalysis}
-
-【線正確性90%のための技術仕様】
-1. 線の種類と太さ：
-   - 主輪郭線：3-4px（被写体の境界）
-   - 副輪郭線：2-3px（内部構造・筋肉の流れ）
-   - 細部線：1-2px（模様・質感・表情）
-
-2. 線の配置原則：
-   - 写真の明暗境界に正確に沿う
-   - 解剖学的に正しい位置に配置
-   - 遠近法を保持した線の強弱
-
-3. 避けるべき要素：
-   - cartoon style, anime style, chibi
-   - simplified shapes, basic forms
-   - stylized features, exaggerated proportions
-
-4. 線画品質基準：
-   - photorealistic line art
-   - anatomically accurate
-   - preserves original composition
-   - maintains spatial relationships
-
-設計仕様を出力してください。`
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 400
-                    }),
-                });
-
-                let lineDesign = structureAnalysis;
-                if (lineDesignResponse.ok) {
-                    const lineResult = await lineDesignResponse.json();
-                    if (lineResult.choices && lineResult.choices[0]) {
-                        lineDesign = lineResult.choices[0].message.content.trim();
-                        console.log('STAGE 2 - 線画技術設計:', lineDesign);
-                    }
-                }
-
-                // === STAGE 3: 最終プロンプト構築（写真忠実性重視） ===
-                updateProgress(65, '段階3: 写真忠実な線画プロンプトを構築しています... 📐');
-                console.log('STAGE 3: 写真忠実プロンプト構築...');
-                
-                const promptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `以下の技術仕様から、DALL-E 3用の写真忠実線画プロンプトを構築してください：
-
-【線画技術仕様】
-${lineDesign}
-
-【写真忠実プロンプト構築ルール】
-目標：写真精度95% + 線正確性90% + 細部保持85%
-
-必須要素：
-1. "Photorealistic line drawing based on the exact composition of the uploaded photo"
-2. "Anatomically accurate proportions and positioning"
-3. "Precise line placement following photo's light-shadow boundaries"
-4. "Detailed line art maintaining original spatial relationships"
-5. "Pure black lines on pure white background"
-6. "No cartoon, anime, or stylized elements"
-7. "Coloring book format with accurate outlines"
-
-品質保証：
-- "High precision line art"
-- "Photo-faithful contours"
-- "Realistic proportions preserved"
-- "Original composition maintained exactly"
-
-英語で正確なDALL-E 3プロンプトを出力してください。`
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 300
-                    }),
-                });
-
-                let finalPrompt = `Photorealistic line drawing of ${lineDesign}, black lines on white background, coloring book style, highly detailed accurate outlines, no cartoon or anime style, anatomically correct proportions, precise line placement`;
-                if (promptResponse.ok) {
-                    const promptResult = await promptResponse.json();
-                    if (promptResult.choices && promptResult.choices[0]) {
-                        finalPrompt = promptResult.choices[0].message.content.trim();
-                        console.log('STAGE 3 - 最終プロンプト:', finalPrompt);
-                    }
-                }
-
-                updateProgress(80, '写真忠実な線画ぬりえを生成しています... 📸');
-
-                // === DALL-E 3で写真忠実線画生成 ===
-                console.log('Generating photorealistic line art with DALL-E 3...');
-
-                const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "dall-e-3",
-                        prompt: finalPrompt,
-                        n: 1,
-                        size: "1024x1024",
-                        quality: "hd"
-                    }),
-                });
-
-                if (!dalle3Response.ok) {
-                    const errorData = await dalle3Response.json();
-                    throw new Error(`API Error: ${dalle3Response.status} - ${errorData.error?.message}`);
-                }
-
-                const dalle3Result = await dalle3Response.json();
-
-                if (dalle3Result.data && dalle3Result.data.length > 0) {
-                    updateProgress(100, '写真忠実なぬりえが完成しました！');
-                    generatedImageUrl = dalle3Result.data[0].url;
-                    showResult(dalle3Result.data[0].url, '写真忠実版', '📸 写真の構図と細部を正確に再現した線画です！');
-                } else {
-                    throw new Error('画像が生成されませんでした');
-                }
-
-            } catch (error) {
-                console.error('写真忠実版エラー:', error);
-                
-                let errorMessage = error.message;
-                if (error.message.includes('401')) {
-                    errorMessage = 'OpenAI APIキーが正しくありません 🔑';
-                } else if (error.message.includes('429')) {
-                    errorMessage = 'API使用量の上限に達しました ⏰';
-                } else if (error.message.includes('network')) {
-                    errorMessage = 'ネットワーク接続に問題があります 🌐';
-                }
-                
-                showError(`エラーが発生しました 😢\n\n${errorMessage}\n\nもう一度お試しください！`);
-            } finally {
-                loadingContainer.style.display = 'none';
-                generateButton.disabled = false;
-                progressContainer.style.display = 'none';
-            }
+            }, 100);
         }
 
-        function showResult(imageUrl, model, message) {
-            document.getElementById('resultImage').innerHTML = `
-                <div style="margin-bottom: 20px;">
-                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 写真忠実なぬりえができました！</p>
-                    <p style="color: #FF69B4; font-size: 1rem; margin-bottom: 10px;">${message}</p>
-                    <img src="${imageUrl}" alt="生成されたぬりえ" style="max-width: 100%; max-height: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #FFB6C1;">
-                    <p style="color: #8B4513; font-size: 1rem; margin-top: 10px;">
-                        写真の構図・座標・細部を正確に保った線画だよ！ 📷<br>
-                        <small>(${model}で生成)</small>
-                    </p>
+        // エッジ検出を使ったぬりえ生成
+        function createColoringPage(img, options) {
+            const sourceCanvas = document.getElementById('sourceCanvas');
+            const grayCanvas = document.getElementById('grayCanvas');
+            const edgeCanvas = document.getElementById('edgeCanvas');
+            const resultCanvas = document.getElementById('resultCanvas');
+            
+            const sourceCtx = sourceCanvas.getContext('2d');
+            const grayCtx = grayCanvas.getContext('2d');
+            const edgeCtx = edgeCanvas.getContext('2d');
+            const resultCtx = resultCanvas.getContext('2d');
+
+            // キャンバスサイズ設定（最大800px）
+            const maxSize = 800;
+            const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+            const width = Math.floor(img.width * scale);
+            const height = Math.floor(img.height * scale);
+
+            [sourceCanvas, grayCanvas, edgeCanvas, resultCanvas].forEach(canvas => {
+                canvas.width = width;
+                canvas.height = height;
+            });
+
+            // 1. 元画像をキャンバスに描画
+            sourceCtx.drawImage(img, 0, 0, width, height);
+            const sourceImageData = sourceCtx.getImageData(0, 0, width, height);
+
+            // 2. グレースケール変換
+            const grayImageData = toGrayscale(sourceImageData);
+            grayCtx.putImageData(grayImageData, 0, 0);
+
+            // 3. ノイズ除去（ガウシアンブラー）
+            let processedImageData = grayImageData;
+            if (options.noiseReduction > 0) {
+                processedImageData = gaussianBlur(grayImageData, options.noiseReduction);
+            }
+
+            // 4. エッジ検出（Sobel）
+            const edgeImageData = sobelEdgeDetection(processedImageData, options.edgeStrength);
+            edgeCtx.putImageData(edgeImageData, 0, 0);
+
+            // 5. 線の太さ調整
+            let finalImageData = edgeImageData;
+            if (options.lineThickness > 1) {
+                finalImageData = thickenLines(edgeImageData, options.lineThickness);
+            }
+
+            // 6. 最終的な白背景・黒線の塗り絵画像
+            const coloringImageData = createFinalColoring(finalImageData);
+            resultCtx.putImageData(coloringImageData, 0, 0);
+
+            return resultCanvas.toDataURL();
+        }
+
+        // グレースケール変換
+        function toGrayscale(imageData) {
+            const data = new Uint8ClampedArray(imageData.data);
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+                data[i] = gray;     // R
+                data[i + 1] = gray; // G
+                data[i + 2] = gray; // B
+                // data[i + 3] はアルファ値なのでそのまま
+            }
+            return new ImageData(data, imageData.width, imageData.height);
+        }
+
+        // ガウシアンブラー
+        function gaussianBlur(imageData, radius) {
+            if (radius === 0) return imageData;
+            
+            const { width, height, data } = imageData;
+            const output = new Uint8ClampedArray(data);
+            
+            // シンプルなボックスブラー（計算量削減）
+            const kernel = radius * 2 + 1;
+            
+            // 水平方向のブラー
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let sum = 0;
+                    let count = 0;
                     
-                    <!-- 写真忠実性結果表示 -->
-                    <div style="background: #F0F8FF; padding: 15px; border-radius: 10px; margin-top: 15px; border: 2px solid #87CEEB;">
-                        <h4 style="color: #4682B4; margin-bottom: 10px;">📊 達成された忠実性</h4>
-                        <div style="display: flex; justify-content: space-between;">
-                            <div style="text-align: center; flex: 1;">
-                                <div style="font-size: 0.9rem; color: #666;">写真精度</div>
-                                <div style="height: 8px; background: #4169E1; border-radius: 4px; width: 95%; margin: 5px auto;"></div>
-                                <div style="font-size: 0.8rem; color: #333; font-weight: bold;">95%</div>
-                            </div>
-                            <div style="text-align: center; flex: 1;">
-                                <div style="font-size: 0.9rem; color: #666;">線の正確性</div>
-                                <div style="height: 8px; background: #32CD32; border-radius: 4px; width: 90%; margin: 5px auto;"></div>
-                                <div style="font-size: 0.8rem; color: #333; font-weight: bold;">90%</div>
-                            </div>
-                            <div style="text-align: center; flex: 1;">
-                                <div style="font-size: 0.9rem; color: #666;">細部保持</div>
-                                <div style="height: 8px; background: #FF6347; border-radius: 4px; width: 85%; margin: 5px auto;"></div>
-                                <div style="font-size: 0.8rem; color: #333; font-weight: bold;">85%</div>
-                            </div>
-                        </div>
-                    </div>
+                    for (let kx = -radius; kx <= radius; kx++) {
+                        const px = x + kx;
+                        if (px >= 0 && px < width) {
+                            const idx = (y * width + px) * 4;
+                            sum += data[idx];
+                            count++;
+                        }
+                    }
+                    
+                    const idx = (y * width + x) * 4;
+                    const avg = sum / count;
+                    output[idx] = avg;
+                    output[idx + 1] = avg;
+                    output[idx + 2] = avg;
+                }
+            }
+            
+            return new ImageData(output, width, height);
+        }
+
+        // Sobelエッジ検出
+        function sobelEdgeDetection(imageData, strength) {
+            const { width, height, data } = imageData;
+            const output = new Uint8ClampedArray(data.length);
+            
+            // Sobelカーネル
+            const sobelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+            const sobelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    let gx = 0;
+                    let gy = 0;
+                    
+                    // 3x3カーネルを適用
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const idx = ((y + ky) * width + (x + kx)) * 4;
+                            const pixel = data[idx]; // グレースケールなのでRチャンネルだけ使用
+                            
+                            gx += pixel * sobelX[ky + 1][kx + 1];
+                            gy += pixel * sobelY[ky + 1][kx + 1];
+                        }
+                    }
+                    
+                    // 勾配の大きさを計算
+                    const magnitude = Math.sqrt(gx * gx + gy * gy);
+                    const edge = Math.min(255, magnitude * strength / 100);
+                    
+                    const idx = (y * width + x) * 4;
+                    output[idx] = edge;
+                    output[idx + 1] = edge;
+                    output[idx + 2] = edge;
+                    output[idx + 3] = 255;
+                }
+            }
+            
+            return new ImageData(output, width, height);
+        }
+
+        // 線の太さ調整
+        function thickenLines(imageData, thickness) {
+            const { width, height, data } = imageData;
+            const output = new Uint8ClampedArray(data);
+            
+            // モルフォロジー処理（膨張）
+            for (let i = 0; i < thickness - 1; i++) {
+                const temp = new Uint8ClampedArray(output);
+                
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        let maxVal = 0;
+                        
+                        // 3x3近傍の最大値
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = ((y + ky) * width + (x + kx)) * 4;
+                                maxVal = Math.max(maxVal, temp[idx]);
+                            }
+                        }
+                        
+                        const idx = (y * width + x) * 4;
+                        output[idx] = maxVal;
+                        output[idx + 1] = maxVal;
+                        output[idx + 2] = maxVal;
+                    }
+                }
+            }
+            
+            return new ImageData(output, width, height);
+        }
+
+        // 最終的なぬりえ画像作成
+        function createFinalColoring(imageData) {
+            const { width, height, data } = imageData;
+            const output = new Uint8ClampedArray(data.length);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const edge = data[i];
+                
+                // エッジが強いほど黒い線に
+                if (edge > 30) {
+                    output[i] = 0;     // 黒
+                    output[i + 1] = 0;
+                    output[i + 2] = 0;
+                } else {
+                    output[i] = 255;   // 白
+                    output[i + 1] = 255;
+                    output[i + 2] = 255;
+                }
+                output[i + 3] = 255; // 不透明
+            }
+            
+            return new ImageData(output, width, height);
+        }
+
+        function showResult(originalSrc, coloringSrc) {
+            processedImageUrl = coloringSrc;
+            
+            comparisonContainer.innerHTML = `
+                <div class="comparison-item">
+                    <h4 style="color: #FF69B4; margin-bottom: 10px;">📸 元の写真</h4>
+                    <img src="${originalSrc}" alt="元の写真" class="comparison-image">
+                </div>
+                <div class="comparison-item">
+                    <h4 style="color: #FF69B4; margin-bottom: 10px;">🎨 ぬりえ線</h4>
+                    <img src="${coloringSrc}" alt="ぬりえ線" class="comparison-image">
+                    <p style="color: #8B4513; font-size: 0.9rem; margin-top: 10px;">
+                        写真から直接抽出した正確な線画！
+                    </p>
                 </div>
             `;
             
             resultContainer.style.display = 'block';
             resultContainer.scrollIntoView({ behavior: 'smooth' });
+            
+            showSuccess('ぬりえ線の抽出が完了しました！ 🎉');
         }
 
         function printColoring() {
-            if (!generatedImageUrl) {
+            if (!processedImageUrl) {
                 showError('プリントする画像がありません');
                 return;
             }
@@ -990,7 +811,7 @@ ${lineDesign}
             printWindow.document.write(`
                 <html>
                     <head>
-                        <title>せかいぬりえ - 写真忠実版プリント</title>
+                        <title>せかいぬりえ - エッジ検出版プリント</title>
                         <style>
                             body { 
                                 margin: 0; 
@@ -1014,9 +835,9 @@ ${lineDesign}
                         </style>
                     </head>
                     <body>
-                        <h1>📷 せかいぬりえ（写真忠実版） 🎨</h1>
-                        <img src="${generatedImageUrl}" alt="ぬりえ">
-                        <p style="margin-top: 20px; color: #8B4513;">写真通りの正確な線画ぬりえだよ！</p>
+                        <h1>📸 せかいぬりえ（エッジ検出版） 🎨</h1>
+                        <img src="${processedImageUrl}" alt="ぬりえ">
+                        <p style="margin-top: 20px; color: #8B4513;">写真から抽出した正確なぬりえ線だよ！</p>
                     </body>
                 </html>
             `);
@@ -1030,38 +851,47 @@ ${lineDesign}
         }
 
         function downloadColoring() {
-            if (!generatedImageUrl) {
+            if (!processedImageUrl) {
                 showError('ダウンロードする画像がありません');
                 return;
             }
 
             // 画像をダウンロード
             const link = document.createElement('a');
-            link.href = generatedImageUrl;
-            link.download = `せかいぬりえ_写真忠実版_${new Date().getTime()}.png`;
+            link.href = processedImageUrl;
+            link.download = `せかいぬりえ_エッジ検出版_${new Date().getTime()}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            showSuccess('写真忠実版ぬりえをダウンロードしました！ 📥');
+            showSuccess('エッジ検出版ぬりえをダウンロードしました！ 📥');
         }
 
         function resetApp() {
             selectedFile = null;
-            generatedImageUrl = null;
+            originalImage = null;
+            processedImageUrl = null;
             fileInput.value = '';
             previewContainer.innerHTML = '';
+            controlsContainer.style.display = 'none';
             resultContainer.style.display = 'none';
             loadingContainer.style.display = 'none';
-            generateButton.disabled = true;
             hideError();
+            
+            // スライダーをデフォルト値にリセット
+            edgeStrengthSlider.value = 100;
+            lineThicknessSlider.value = 2;
+            noiseReductionSlider.value = 2;
+            document.getElementById('edgeStrengthValue').textContent = '100';
+            document.getElementById('lineThicknessValue').textContent = '2';
+            document.getElementById('noiseReductionValue').textContent = '2';
             
             // トップにスクロール
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // 初期化
-        console.log('写真忠実版（精度95% + 線正確性90% + 細部保持85%）初期化完了');
+        console.log('エッジ検出版ぬりえ生成システム初期化完了');
     </script>
 </body>
 </html>
