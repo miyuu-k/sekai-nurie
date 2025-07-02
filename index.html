@@ -448,7 +448,7 @@
         <div class="step-container" id="apiKeyContainer">
             <h2 class="step-title">🔑 OpenAI APIキー設定</h2>
             <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
-                写真を段階的に処理して、忠実で塗りやすいぬりえを2段階で生成します。<br>
+                写真を段階的に分析・処理して、忠実で塗りやすいぬりえを生成します。<br>
                 <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
             </p>
             
@@ -472,7 +472,7 @@
                     </ol>
                     <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
                         ⚠️ <strong>重要:</strong> APIキーは大切に管理してください。他人と共有しないでください。<br>
-                        💰 DALL-E 2の利用料金: 1回あたり約4-6円程度（2段階処理）
+                        💰 DALL-E 3の利用料金: 1回あたり約6-12円程度（2段階処理）
                     </p>
                 </div>
             </details>
@@ -697,11 +697,21 @@
             step.className = `process-step ${status}`;
         }
 
+        // ファイルをBase64に変換
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
         // メイン処理：2段階ぬりえ生成
         generateButton.addEventListener('click', generateTwoStageColoring);
 
         async function generateTwoStageColoring() {
-            console.log('=== 2段階処理開始 ===');
+            console.log('=== DALL-E 3による2段階処理開始 ===');
             
             if (!checkApiKey()) return;
             
@@ -716,27 +726,91 @@
             resultContainer.style.display = 'none';
             hideError();
             progressContainer.style.display = 'block';
-            updateProgress(0, '写真をアップロードしています...');
+            updateProgress(0, '写真を分析しています...');
 
             try {
-                // === STAGE 1: 写真をかわいいイラストに変換 ===
-                updateProgress(10, 'ステップ1: 写真をかわいいイラストに変換しています... 🎨');
-                updateStepStatus(1, 'active');
-                console.log('STAGE 1: 写真→イラスト変換...');
+                // 画像をBase64に変換
+                const imageData = await fileToBase64(selectedFile);
 
-                const illustrationResponse = await fetch('https://api.openai.com/v1/images/edits', {
+                // === STAGE 1: 写真を分析してイラスト風プロンプト作成 ===
+                updateProgress(15, 'ステップ1: AI が写真を分析してイラスト化方針を決めています... 🔍');
+                updateStepStatus(1, 'active');
+                console.log('STAGE 1: 写真分析とイラスト化方針...');
+
+                const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
                     },
-                    body: createFormData(selectedFile, 
-                        'Transform this photo into a cute, kawaii-style illustration. Make it colorful, friendly, and charming while keeping the main subject and composition. The style should be anime/manga inspired with soft colors, big expressive eyes if there are characters, and an overall adorable aesthetic. Maintain the original pose and setting but enhance the cuteness factor.'
-                    )
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `この写真を詳しく分析して、忠実性を保ちながらかわいいイラスト風に変換するためのDALL-E 3プロンプトを作成してください。
+
+【分析ポイント】
+1. 被写体の詳細（人物/動物/物体、特徴、ポーズ、表情）
+2. 構図と背景（位置関係、重要な要素）
+3. 色彩と雰囲気
+4. 保持すべき特徴的要素
+
+【イラスト化目標】
+- kawaii/anime風の愛らしいスタイル
+- 元写真の構図と特徴を忠実に保持
+- 色彩豊かで親しみやすい雰囲気
+- 後でぬりえ化しやすい明確な形状
+
+英語で簡潔なDALL-E 3プロンプトを出力してください。`
+                                    },
+                                    {
+                                        type: "image_url",
+                                        image_url: {
+                                            url: imageData
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 300
+                    }),
+                });
+
+                let illustrationPrompt = "A cute kawaii-style illustration";
+                if (analysisResponse.ok) {
+                    const analysisResult = await analysisResponse.json();
+                    if (analysisResult.choices && analysisResult.choices[0]) {
+                        illustrationPrompt = analysisResult.choices[0].message.content.trim();
+                        console.log('イラスト化プロンプト:', illustrationPrompt);
+                    }
+                }
+
+                // === STAGE 2: DALL-E 3でイラスト生成 ===
+                updateProgress(35, 'ステップ1: かわいいイラストを生成しています... 🎨');
+                console.log('STAGE 2: DALL-E 3でイラスト生成...');
+
+                const illustrationResponse = await fetch('https://api.openai.com/v1/images/generations', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "dall-e-3",
+                        prompt: illustrationPrompt,
+                        n: 1,
+                        size: "1024x1024",
+                        quality: "standard"
+                    }),
                 });
 
                 if (!illustrationResponse.ok) {
                     const errorData = await illustrationResponse.json();
-                    throw new Error(`Stage 1 API Error: ${illustrationResponse.status} - ${errorData.error?.message}`);
+                    throw new Error(`Stage 2 API Error: ${illustrationResponse.status} - ${errorData.error?.message}`);
                 }
 
                 const illustrationResult = await illustrationResponse.json();
@@ -746,30 +820,88 @@
                 }
 
                 illustrationImageUrl = illustrationResult.data[0].url;
-                updateProgress(50, 'ステップ1完了！ ステップ2: イラストを白黒ぬりえに変換しています... ✏️');
+                updateProgress(60, 'ステップ1完了！ ステップ2: ぬりえ化方針を分析しています... 📝');
                 updateStepStatus(1, 'completed');
                 updateStepStatus(2, 'active');
 
-                // イラスト画像をダウンロードしてファイル化
-                const illustrationBlob = await fetch(illustrationImageUrl).then(r => r.blob());
-                const illustrationFile = new File([illustrationBlob], 'illustration.png', { type: 'image/png' });
+                // === STAGE 3: イラストからぬりえ化プロンプト作成 ===
+                console.log('STAGE 3: ぬりえ化方針分析...');
 
-                // === STAGE 2: イラストを白黒ぬりえに変換 ===
-                console.log('STAGE 2: イラスト→ぬりえ変換...');
-
-                const coloringResponse = await fetch('https://api.openai.com/v1/images/edits', {
+                const coloringAnalysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
                     },
-                    body: createFormData(illustrationFile, 
-                        'Convert this colorful illustration into a black and white coloring book page. Create clean, thick black outlines (3-4px thick) with no fill colors or shading. The lines should be simple enough for children aged 4-8 to color easily. Remove all colors and gradients, keeping only the essential outlines and shapes. Make sure there are large, clear areas perfect for coloring. Pure white background with bold black lines only.'
-                    )
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `このイラストを白黒のぬりえに変換するためのDALL-E 3プロンプトを作成してください。
+
+【ぬりえ化要件】
+1. 白い背景に黒い線のみ
+2. 太い輪郭線（3-4px相当）
+3. 塗りやすい大きな領域
+4. 4-8歳の子供が塗れる複雑さ
+5. 元のイラストの構図・形状を保持
+6. 細かいディテールは簡略化
+
+【目標】
+- "coloring book page"スタイル
+- シンプルで明確な線画
+- 塗り絵として最適化
+
+英語で簡潔なDALL-E 3プロンプトを出力してください。`
+                                    },
+                                    {
+                                        type: "image_url",
+                                        image_url: {
+                                            url: illustrationImageUrl
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 250
+                    }),
+                });
+
+                let coloringPrompt = "A simple black and white coloring book page with thick outlines";
+                if (coloringAnalysisResponse.ok) {
+                    const coloringAnalysisResult = await coloringAnalysisResponse.json();
+                    if (coloringAnalysisResult.choices && coloringAnalysisResult.choices[0]) {
+                        coloringPrompt = coloringAnalysisResult.choices[0].message.content.trim();
+                        console.log('ぬりえ化プロンプト:', coloringPrompt);
+                    }
+                }
+
+                // === STAGE 4: DALL-E 3でぬりえ生成 ===
+                updateProgress(80, 'ステップ2: 白黒ぬりえを生成しています... ✏️');
+                console.log('STAGE 4: DALL-E 3でぬりえ生成...');
+
+                const coloringResponse = await fetch('https://api.openai.com/v1/images/generations', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "dall-e-3",
+                        prompt: coloringPrompt,
+                        n: 1,
+                        size: "1024x1024",
+                        quality: "standard"
+                    }),
                 });
 
                 if (!coloringResponse.ok) {
                     const errorData = await coloringResponse.json();
-                    throw new Error(`Stage 2 API Error: ${coloringResponse.status} - ${errorData.error?.message}`);
+                    throw new Error(`Stage 4 API Error: ${coloringResponse.status} - ${errorData.error?.message}`);
                 }
 
                 const coloringResult = await coloringResponse.json();
@@ -794,6 +926,8 @@
                     errorMessage = 'API使用量の上限に達しました ⏰';
                 } else if (error.message.includes('network')) {
                     errorMessage = 'ネットワーク接続に問題があります 🌐';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'ネットワーク接続に問題があります。もう一度お試しください 🌐';
                 }
                 
                 showError(`エラーが発生しました 😢\n\n${errorMessage}\n\nもう一度お試しください！`);
@@ -804,16 +938,6 @@
                 updateStepStatus(1, '');
                 updateStepStatus(2, '');
             }
-        }
-
-        // FormData作成ヘルパー関数
-        function createFormData(imageFile, prompt) {
-            const formData = new FormData();
-            formData.append('image', imageFile);
-            formData.append('prompt', prompt);
-            formData.append('n', '1');
-            formData.append('size', '1024x1024');
-            return formData;
         }
 
         // 2段階結果表示
