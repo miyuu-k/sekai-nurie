@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>せかいぬりえ - バランス調整版</title>
+    <title>せかいぬりえ - クラウド版</title>
     <style>
         * {
             margin: 0;
@@ -73,19 +73,12 @@
             background: #FFF8DC;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
 
         .upload-area:hover {
             border-color: #FF69B4;
             background: #FFE4E1;
             transform: scale(1.02);
-        }
-
-        .upload-area.dragover {
-            border-color: #FF1493;
-            background: #FFB6C1;
         }
 
         .upload-icon {
@@ -98,24 +91,6 @@
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
-        }
-
-        .upload-text {
-            font-size: 1.2rem;
-            color: #8B4513;
-            margin-bottom: 10px;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .image-preview {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 15px;
-            margin: 20px 0;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
         .button {
@@ -166,210 +141,25 @@
             100% { transform: rotate(360deg); }
         }
 
-        .progress-container {
-            width: 100%;
-            background-color: #FFE4E1;
-            border-radius: 25px;
-            padding: 3px;
-            margin: 20px 0;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 20px;
-            background: linear-gradient(45deg, #FF69B4, #FFB6C1);
-            border-radius: 25px;
-            transition: width 0.3s ease;
-            text-align: center;
-            line-height: 20px;
-            color: white;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .result-container {
-            display: none;
-            text-align: center;
-        }
-
-        .print-button {
-            background: linear-gradient(45deg, #32CD32, #98FB98);
-            margin-top: 20px;
-        }
-
-        .download-button {
-            background: linear-gradient(45deg, #4169E1, #87CEEB);
-            margin-top: 10px;
-            margin-left: 10px;
-        }
-
-        .error-message {
-            background: #FFE4E6;
-            color: #D8000C;
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #FFB6C1;
-            margin: 10px 0;
-            display: none;
-        }
-
-        .success-message {
-            background: #E6FFE6;
-            color: #006400;
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #90EE90;
-            margin: 10px 0;
-            display: none;
-        }
-
-        .instructions {
-            background: #E6F3FF;
+        .cloud-notice {
+            background: #E8F5E8;
             padding: 20px;
             border-radius: 15px;
             margin-bottom: 20px;
-            border: 3px solid #87CEEB;
+            border: 3px solid #90EE90;
+            text-align: center;
         }
 
-        .instructions h3 {
-            color: #4682B4;
-            margin-bottom: 15px;
+        .cloud-notice h3 {
+            color: #2E8B57;
+            margin-bottom: 10px;
             font-size: 1.3rem;
         }
 
-        .instructions ol {
+        .cloud-notice p {
             color: #2F4F4F;
             font-size: 1.1rem;
             line-height: 1.6;
-            padding-left: 20px;
-        }
-
-        .instructions li {
-            margin-bottom: 8px;
-        }
-
-        .status-text {
-            font-size: 1.1rem;
-            color: #FF69B4;
-            margin-top: 10px;
-        }
-
-        /* APIキー設定用スタイル */
-        .api-key-input {
-            width: 70%;
-            padding: 12px;
-            border: 3px solid #FFB6C1;
-            border-radius: 10px;
-            font-size: 1rem;
-            margin-right: 10px;
-            font-family: monospace;
-        }
-
-        .api-key-button {
-            background: linear-gradient(45deg, #32CD32, #98FB98);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: inherit;
-        }
-
-        .api-status {
-            padding: 10px;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: none;
-            font-weight: bold;
-        }
-
-        .api-status.success {
-            background: #E6FFE6;
-            color: #006400;
-            border: 2px solid #90EE90;
-        }
-
-        .api-status.error {
-            background: #FFE4E6;
-            color: #D8000C;
-            border: 2px solid #FFB6C1;
-        }
-
-        .api-help {
-            margin-top: 15px;
-        }
-
-        .api-help summary {
-            color: #FF69B4;
-            cursor: pointer;
-            font-weight: bold;
-            padding: 5px;
-        }
-
-        .api-help-content {
-            margin-top: 10px;
-            padding: 15px;
-            background: #F0F8FF;
-            border-radius: 10px;
-            border: 2px solid #87CEEB;
-        }
-
-        /* バランス指標 */
-        .balance-indicator {
-            background: #F0F8FF;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            border: 2px solid #87CEEB;
-        }
-
-        .balance-bars {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-        }
-
-        .balance-item {
-            text-align: center;
-            flex: 1;
-            margin: 0 5px;
-        }
-
-        .balance-bar {
-            height: 8px;
-            border-radius: 4px;
-            margin: 5px auto;
-        }
-
-        .faithfulness { background: #FF6B6B; }
-        .cuteness { background: #FFD93D; }
-        .simplicity { background: #6BCF7F; }
-
-        @media (max-width: 600px) {
-            .title {
-                font-size: 2rem;
-            }
-            
-            .container {
-                padding: 10px;
-            }
-            
-            .step-container {
-                padding: 20px;
-            }
-
-            .download-button {
-                margin-left: 0;
-                margin-top: 10px;
-            }
-
-            .api-key-input {
-                width: 100%;
-                margin-bottom: 10px;
-                margin-right: 0;
-            }
         }
     </style>
 </head>
@@ -378,96 +168,37 @@
         <div class="header">
             <h1 class="title">🌈 せかいぬりえ 🎨</h1>
             <p class="subtitle">写真に忠実で かわいくて 塗りやすい ぬりえを つくろう！</p>
-            
-            <!-- バランス指標 -->
-            <div class="balance-indicator">
-                <h4 style="color: #4682B4; margin-bottom: 10px;">🎯 目標バランス</h4>
-                <div class="balance-bars">
-                    <div class="balance-item">
-                        <div style="font-size: 0.9rem; color: #666;">忠実性</div>
-                        <div class="balance-bar faithfulness" style="width: 70%;"></div>
-                        <div style="font-size: 0.8rem; color: #333;">70%</div>
-                    </div>
-                    <div class="balance-item">
-                        <div style="font-size: 0.9rem; color: #666;">可愛さ</div>
-                        <div class="balance-bar cuteness" style="width: 80%;"></div>
-                        <div style="font-size: 0.8rem; color: #333;">80%</div>
-                    </div>
-                    <div class="balance-item">
-                        <div style="font-size: 0.9rem; color: #666;">簡素さ</div>
-                        <div class="balance-bar simplicity" style="width: 80%;"></div>
-                        <div style="font-size: 0.8rem; color: #333;">80%</div>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <div class="instructions">
-            <h3>🎯 つかいかた</h3>
-            <ol>
-                <li>OpenAI APIキーを設定してね</li>
-                <li>すきな写真を えらんでね</li>
-                <li>「バランス良い ぬりえにする」ボタンを おしてね</li>
-                <li>ちょっと まっててね（45秒くらい - 3段階で生成）</li>
-                <li>できあがったら プリントして ぬりえを たのしもう！</li>
-            </ol>
-        </div>
-
-        <!-- APIキー設定セクション -->
-        <div class="step-container" id="apiKeyContainer">
-            <h2 class="step-title">🔑 OpenAI APIキー設定</h2>
-            <p style="color: #8B4513; margin-bottom: 15px; line-height: 1.6;">
-                写真に忠実でありながら、可愛くて塗りやすいぬりえを3段階分析で生成します。<br>
-                <small style="color: #666;">※ APIキーはブラウザにのみ保存され、外部に送信されません</small>
+        <div class="cloud-notice">
+            <h3>☁️ クラウド版</h3>
+            <p>
+                APIキーの設定は不要です！<br>
+                すぐに写真を選んでぬりえを作成できます 🎉
             </p>
-            
-            <div style="margin-bottom: 20px;">
-                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="sk-proj-...">
-                <button onclick="setApiKey()" class="api-key-button">🔧 設定</button>
-            </div>
-            
-            <div id="apiKeyStatus" class="api-status"></div>
-            
-            <details class="api-help">
-                <summary>📖 APIキーの取得方法</summary>
-                <div class="api-help-content">
-                    <ol style="color: #2F4F4F; line-height: 1.8;">
-                        <li><a href="https://platform.openai.com/" target="_blank" style="color: #FF69B4; text-decoration: none; font-weight: bold;">OpenAI Platform</a> にアクセス</li>
-                        <li>アカウントを作成・ログイン</li>
-                        <li>左メニューの「API Keys」をクリック</li>
-                        <li>「Create new secret key」をクリック</li>
-                        <li>生成されたキー（sk-proj-で始まる）をコピー</li>
-                        <li>上記の入力欄に貼り付けて「設定」をクリック</li>
-                    </ol>
-                    <p style="color: #D2691E; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #FFF8DC; border-radius: 5px;">
-                        ⚠️ <strong>重要:</strong> APIキーは大切に管理してください。他人と共有しないでください。<br>
-                        💰 DALL-E 3の利用料金: 1回あたり約3-8円程度
-                    </p>
-                </div>
-            </details>
         </div>
 
         <!-- 画像アップロードセクション -->
-        <div class="step-container" id="uploadContainer" style="opacity: 0.5; pointer-events: none;">
+        <div class="step-container">
             <h2 class="step-title">📸 写真を えらんでね</h2>
             
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📱</div>
-                <div class="upload-text">ここを タップして 写真を えらんでね</div>
+                <div style="font-size: 1.2rem; color: #8B4513; margin-bottom: 10px;">
+                    ここを タップして 写真を えらんでね
+                </div>
                 <div style="font-size: 0.9rem; color: #666;">JPEG、PNG、HEIC対応</div>
-                <input type="file" id="fileInput" class="file-input" accept="image/*">
+                <input type="file" id="fileInput" style="display: none;" accept="image/*">
             </div>
 
-            <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
+            <div id="errorMessage" style="display: none; background: #FFE4E6; color: #D8000C; padding: 15px; border-radius: 10px; margin: 10px 0;"></div>
+            <div id="successMessage" style="display: none; background: #E6FFE6; color: #006400; padding: 15px; border-radius: 10px; margin: 10px 0;"></div>
             
-            <div id="previewContainer" style="text-align: center; margin-top: 20px;">
-                <!-- プレビュー画像がここに表示される -->
-            </div>
+            <div id="previewContainer" style="text-align: center; margin-top: 20px;"></div>
 
             <div style="text-align: center; margin-top: 20px;">
                 <button class="button" id="generateButton" disabled>
-                    ⚖️ バランス良い ぬりえにする！
+                    🎨 ぬりえを つくる！
                 </button>
             </div>
         </div>
@@ -475,25 +206,23 @@
         <!-- ローディング表示 -->
         <div class="loading" id="loadingContainer">
             <div class="spinner"></div>
-            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">AI が 3段階で バランス良い ぬりえを つくっているよ... ✨</p>
-            <div class="status-text" id="statusText">段階1: 写真を分析しています...</div>
-            
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-bar" id="progressBar">0%</div>
+            <p style="font-size: 1.2rem; color: #FF69B4; margin-bottom: 10px;">
+                AI が ぬりえを つくっているよ... ✨
+            </p>
+            <div id="statusText" style="font-size: 1.1rem; color: #FF69B4; margin-top: 10px;">
+                写真を分析しています...
             </div>
         </div>
 
         <!-- 結果表示 -->
-        <div class="step-container result-container" id="resultContainer">
-            <h2 class="step-title">🎉 バランス良い ぬりえが できあがり！</h2>
-            <div id="resultImage">
-                <!-- 生成されたぬりえがここに表示される -->
-            </div>
+        <div class="step-container" id="resultContainer" style="display: none; text-align: center;">
+            <h2 class="step-title">🎉 ぬりえが できあがり！</h2>
+            <div id="resultImage"></div>
             <div>
-                <button class="button print-button" onclick="printColoring()">
+                <button class="button" onclick="printColoring()" style="background: linear-gradient(45deg, #32CD32, #98FB98); margin-top: 20px;">
                     🖨️ プリントする
                 </button>
-                <button class="button download-button" onclick="downloadColoring()">
+                <button class="button" onclick="downloadColoring()" style="background: linear-gradient(45deg, #4169E1, #87CEEB); margin-top: 10px; margin-left: 10px;">
                     💾 ダウンロード
                 </button>
             </div>
@@ -504,12 +233,13 @@
     </div>
 
     <script>
-        // グローバル変数
+        // 設定: あなたのLambda API Gateway URLに変更してください
+        const API_ENDPOINT = 'https://a0p0f6jzvd.execute-api.ap-southeast-2.amazonaws.com/prod';
+
         let selectedFile = null;
         let generatedImageUrl = null;
-        let OPENAI_API_KEY = '';
 
-        // DOM要素の取得
+        // DOM要素
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const previewContainer = document.getElementById('previewContainer');
@@ -519,74 +249,10 @@
         const errorMessage = document.getElementById('errorMessage');
         const successMessage = document.getElementById('successMessage');
         const statusText = document.getElementById('statusText');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('progressBar');
-        const uploadContainer = document.getElementById('uploadContainer');
-
-        // APIキー管理
-        function setApiKey() {
-            const apiKeyInput = document.getElementById('apiKeyInput');
-            const apiKey = apiKeyInput.value.trim();
-            const statusDiv = document.getElementById('apiKeyStatus');
-            
-            if (!apiKey) {
-                showApiKeyStatus('APIキーを入力してください', 'error');
-                return;
-            }
-            
-            if (!apiKey.startsWith('sk-')) {
-                showApiKeyStatus('正しいAPIキー形式ではありません（sk-で始まる必要があります）', 'error');
-                return;
-            }
-            
-            OPENAI_API_KEY = apiKey;
-            apiKeyInput.value = '';
-            showApiKeyStatus('APIキーが設定されました！ 写真を選択してください 🎉', 'success');
-            
-            uploadContainer.style.opacity = '1';
-            uploadContainer.style.pointerEvents = 'auto';
-        }
-
-        function showApiKeyStatus(message, type) {
-            const statusDiv = document.getElementById('apiKeyStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.textContent = message;
-            statusDiv.className = `api-status ${type}`;
-        }
-
-        function checkApiKey() {
-            if (!OPENAI_API_KEY) {
-                showError('まず OpenAI APIキーを設定してください 🔑');
-                return false;
-            }
-            return true;
-        }
 
         // ファイルアップロード関連
         uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', handleDragOver);
-        uploadArea.addEventListener('drop', handleDrop);
-        uploadArea.addEventListener('dragleave', handleDragLeave);
         fileInput.addEventListener('change', handleFileSelect);
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        }
-
-        function handleDragLeave(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        }
 
         function handleFileSelect(e) {
             const files = e.target.files;
@@ -596,15 +262,11 @@
         }
 
         function handleFile(file) {
-            console.log('Selected file:', file.name, file.type, file.size);
-
-            // ファイル形式チェック
             if (!file.type.startsWith('image/')) {
                 showError('画像ファイルを選択してください');
                 return;
             }
 
-            // ファイルサイズチェック (10MB)
             if (file.size > 10 * 1024 * 1024) {
                 showError('ファイルが大きすぎます（10MB以下にしてください）');
                 return;
@@ -621,9 +283,9 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 previewContainer.innerHTML = `
-                    <img src="${e.target.result}" alt="選択した画像" class="image-preview">
+                    <img src="${e.target.result}" alt="選択した画像" style="max-width: 100%; max-height: 300px; border-radius: 15px; margin: 20px 0;">
                     <p style="color: #FF69B4; font-size: 1.1rem; margin-top: 10px;">
-                        この写真で バランス良い ぬりえを つくるよ！ ⚖️
+                        この写真で ぬりえを つくるよ！ 🎨
                     </p>
                 `;
             };
@@ -647,7 +309,97 @@
             successMessage.style.display = 'none';
         }
 
-        // ファイルをBase64に変換
+        // バックエンド経由でOpenAI APIを呼び出し
+        async function callOpenAI(endpoint, body) {
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    endpoint: endpoint,
+                    method: 'POST',
+                    body: body
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+
+            return await response.json();
+        }
+
+        // メイン処理
+        generateButton.addEventListener('click', generateColoring);
+
+        async function generateColoring() {
+            if (!selectedFile) {
+                showError('まず 写真を選択してください！');
+                return;
+            }
+
+            loadingContainer.style.display = 'block';
+            generateButton.disabled = true;
+            resultContainer.style.display = 'none';
+            hideError();
+
+            try {
+                // 画像をBase64に変換
+                statusText.textContent = '写真を準備しています...';
+                const imageData = await fileToBase64(selectedFile);
+                
+                // 構造分析
+                statusText.textContent = '段階1: 写真を分析しています... 🔍';
+                const structureResponse = await callOpenAI('https://api.openai.com/v1/chat/completions', {
+                    model: "gpt-4o",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: `この写真をぬりえにするため、重要な構造要素を分析してください。被写体の種類、ポーズ、背景の主要要素、特徴的な部分を詳しく説明してください。`
+                                },
+                                {
+                                    type: "image_url",
+                                    image_url: { url: imageData }
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens: 300
+                });
+
+                const structureAnalysis = structureResponse.choices?.[0]?.message?.content || "subject in photo";
+
+                // ぬりえ生成
+                statusText.textContent = 'ぬりえを生成しています... ✨';
+                const dalle3Response = await callOpenAI('https://api.openai.com/v1/images/generations', {
+                    model: "dall-e-3",
+                    prompt: `Based on this analysis: ${structureAnalysis}. Create a coloring book page with thick black outlines, simple shapes suitable for children ages 3-6, kawaii cute style, pure white background, no colors or shading, large coloring areas.`,
+                    n: 1,
+                    size: "1024x1024",
+                    quality: "standard"
+                });
+
+                if (dalle3Response.data && dalle3Response.data.length > 0) {
+                    generatedImageUrl = dalle3Response.data[0].url;
+                    showResult(dalle3Response.data[0].url);
+                } else {
+                    throw new Error('画像が生成されませんでした');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(`エラーが発生しました 😢\n\n${error.message}\n\nもう一度お試しください！`);
+            } finally {
+                loadingContainer.style.display = 'none';
+                generateButton.disabled = false;
+            }
+        }
+
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -657,388 +409,47 @@
             });
         }
 
-        // プログレスバー更新
-        function updateProgress(percent, message) {
-            progressBar.style.width = percent + '%';
-            progressBar.textContent = percent + '%';
-            statusText.textContent = message;
-        }
-
-        // メイン処理：バランス良いぬりえ生成
-        generateButton.addEventListener('click', generateBalancedColoring);
-
-        async function generateBalancedColoring() {
-            console.log('=== バランス調整版（忠実70% + 可愛80% + 簡素80%）開始 ===');
-            
-            if (!checkApiKey()) return;
-            
-            if (!selectedFile) {
-                showError('まず 写真を選択してください！');
-                return;
-            }
-
-            // ローディング表示
-            loadingContainer.style.display = 'block';
-            generateButton.disabled = true;
-            resultContainer.style.display = 'none';
-            hideError();
-            progressContainer.style.display = 'block';
-            updateProgress(0, '写真をアップロードしています...');
-
-            try {
-                // 画像をBase64に変換
-                updateProgress(5, '写真を準備しています...');
-                const imageData = await fileToBase64(selectedFile);
-                
-                // === STAGE 1: 詳細構造分析（忠実性70%確保） ===
-                updateProgress(15, '段階1: AI が写真の構造を詳しく分析しています... 🔍');
-                console.log('STAGE 1: 詳細構造分析...');
-                
-                const structureResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `この写真を忠実度70%を保ちながらぬりえ化するため、重要な構造要素を分析してください：
-
-【忠実性保持（70%）のための分析】
-1. 被写体の基本情報：
-   - 人物/動物/物体の種類、性別、年齢層
-   - 基本的なポーズ・向き・表情
-   - 服装や模様の大まかな特徴
-   - 体型・サイズ感
-
-2. 空間構成：
-   - 被写体の位置（中央/左右/前後）
-   - 背景の主要要素（家具、窓、ドア等）
-   - 全体的な構図・レイアウト
-
-3. 保持すべき特徴的要素：
-   - その写真らしさを決定する重要な要素
-   - 削除すると「別の写真」になってしまう部分
-   - 家族が「うちの〇〇だ！」と認識できる特徴
-
-【注意点】
-- 細かすぎるディテールは後の段階で簡素化予定
-- ここでは「何を保持すべきか」の判断が重要
-- 70%の忠実性を維持するための基盤情報
-
-詳細に分析してください。`
-                                    },
-                                    {
-                                        type: "image_url",
-                                        image_url: {
-                                            url: imageData
-                                        }
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 400
-                    }),
-                });
-
-                let structureAnalysis = "subject in the photo";
-                if (structureResponse.ok) {
-                    const structureResult = await structureResponse.json();
-                    if (structureResult.choices && structureResult.choices[0]) {
-                        structureAnalysis = structureResult.choices[0].message.content.trim();
-                        console.log('STAGE 1 - 構造分析:', structureAnalysis);
-                    }
-                }
-
-                // === STAGE 2: 可愛さ・簡素化設計（80%バランス） ===
-                updateProgress(35, '段階2: AI が可愛さと簡素化のバランスを設計しています... 🎨');
-                console.log('STAGE 2: 可愛さ・簡素化設計...');
-                
-                const designResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `以下の構造分析から、可愛さ80%+簡素さ80%のバランス設計を行ってください：
-
-【構造分析結果】
-${structureAnalysis}
-
-【設計目標】
-🎯 可愛さ80%の実現：
-- 目を1.5倍大きく、まん丸に（kawaii要素）
-- 体型をふんわり・丸みを帯びた感じに
-- 表情を穏やか・笑顔にアレンジ
-- 毛並みや質感をふわふわ感で表現
-- 全体的にchibi風の愛らしさ
-
-📏 簡素さ80%の実現：
-- 複雑な毛並み → 3-4つの大きな色分け区域
-- 細かいディテール → 太い線（5-6px）の基本形状
-- 背景 → 主要要素2-3個のシンプル構成
-- 小さな装飾 → 大きな塗りやすいエリア
-- 6歳児が15分で塗り終わる複雑さ
-
-⚖️ バランス調整ポイント：
-- 忠実性70%：基本構図・被写体特徴・重要要素は保持
-- 可愛さ80%：kawaii化で魅力アップ、でもやりすぎない
-- 簡素さ80%：塗りやすさ重視、でも単調すぎない
-
-設計方針を出力してください。`
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 350
-                    }),
-                });
-
-                let designPlan = structureAnalysis;
-                if (designResponse.ok) {
-                    const designResult = await designResponse.json();
-                    if (designResult.choices && designResult.choices[0]) {
-                        designPlan = designResult.choices[0].message.content.trim();
-                        console.log('STAGE 2 - 設計方針:', designPlan);
-                    }
-                }
-
-                // === STAGE 3: 最終プロンプト構築・品質チェック ===
-                updateProgress(55, '段階3: AI が最終的なぬりえプロンプトを構築しています... ⚖️');
-                console.log('STAGE 3: 最終プロンプト構築...');
-                
-                const promptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `以下の設計方針から、DALL-E 3用の最終プロンプトを構築してください：
-
-【設計方針】
-${designPlan}
-
-【最終プロンプト構築指針】
-目標バランス: 忠実性70% + 可愛さ80% + 簡素さ80%
-
-構築ルール:
-1. 忠実性70%確保：
-   - 元写真の基本構図・被写体特徴を明確に記述
-   - "Based on the original photo composition"で開始
-   
-2. 可愛さ80%実現：
-   - "kawaii style"、"chibi proportions"
-   - "big round eyes"、"gentle smile"
-   - "fluffy and soft appearance"
-
-3. 簡素さ80%実現：
-   - "coloring book page"、"thick black outlines"
-   - "simple shapes for ages 3-6"
-   - "large coloring areas"
-
-4. 品質保証：
-   - "pure white background"
-   - "no shading or colors"
-   - "clear, bold lines"
-
-英語で簡潔なDALL-E 3プロンプトを出力してください。`
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens: 300
-                    }),
-                });
-
-                let finalPrompt = designPlan;
-                if (promptResponse.ok) {
-                    const promptResult = await promptResponse.json();
-                    if (promptResult.choices && promptResult.choices[0]) {
-                        finalPrompt = promptResult.choices[0].message.content.trim();
-                        console.log('STAGE 3 - 最終プロンプト:', finalPrompt);
-                    }
-                }
-
-                updateProgress(75, 'バランス良いぬりえを生成しています... ✨');
-
-                // === DALL-E 3でバランス良いぬりえ生成 ===
-                console.log('Generating balanced coloring page with DALL-E 3...');
-
-                const dalle3Response = await fetch('https://api.openai.com/v1/images/generations', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: "dall-e-3",
-                        prompt: finalPrompt,
-                        n: 1,
-                        size: "1024x1024",
-                        quality: "standard"
-                    }),
-                });
-
-                if (!dalle3Response.ok) {
-                    const errorData = await dalle3Response.json();
-                    throw new Error(`API Error: ${dalle3Response.status} - ${errorData.error?.message}`);
-                }
-
-                const dalle3Result = await dalle3Response.json();
-
-                if (dalle3Result.data && dalle3Result.data.length > 0) {
-                    updateProgress(100, 'バランス良いぬりえが完成しました！');
-                    generatedImageUrl = dalle3Result.data[0].url;
-                    showResult(dalle3Result.data[0].url, 'バランス調整版', '🎯 忠実で可愛くて塗りやすいぬりえです！');
-                } else {
-                    throw new Error('画像が生成されませんでした');
-                }
-
-            } catch (error) {
-                console.error('バランス調整版エラー:', error);
-                
-                let errorMessage = error.message;
-                if (error.message.includes('401')) {
-                    errorMessage = 'OpenAI APIキーが正しくありません 🔑';
-                } else if (error.message.includes('429')) {
-                    errorMessage = 'API使用量の上限に達しました ⏰';
-                } else if (error.message.includes('network')) {
-                    errorMessage = 'ネットワーク接続に問題があります 🌐';
-                }
-                
-                showError(`エラーが発生しました 😢\n\n${errorMessage}\n\nもう一度お試しください！`);
-            } finally {
-                loadingContainer.style.display = 'none';
-                generateButton.disabled = false;
-                progressContainer.style.display = 'none';
-            }
-        }
-
-        function showResult(imageUrl, model, message) {
+        function showResult(imageUrl) {
             document.getElementById('resultImage').innerHTML = `
-                <div style="margin-bottom: 20px;">
-                    <p style="color: #FF69B4; font-size: 1.3rem; margin-bottom: 15px;">🎉 バランス良いぬりえができました！</p>
-                    <p style="color: #FF69B4; font-size: 1rem; margin-bottom: 10px;">${message}</p>
-                    <img src="${imageUrl}" alt="生成されたぬりえ" style="max-width: 100%; max-height: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #FFB6C1;">
-                    <p style="color: #8B4513; font-size: 1rem; margin-top: 10px;">
-                        写真の特徴を保ちつつ、可愛くて塗りやすいぬりえだよ！ 🌈<br>
-                        <small>(${model}で生成)</small>
-                    </p>
-                    
-                    <!-- バランス結果表示 -->
-                    <div style="background: #F0F8FF; padding: 15px; border-radius: 10px; margin-top: 15px; border: 2px solid #87CEEB;">
-                        <h4 style="color: #4682B4; margin-bottom: 10px;">📊 達成されたバランス</h4>
-                        <div style="display: flex; justify-content: space-between;">
-                            <div style="text-align: center; flex: 1;">
-                                <div style="font-size: 0.9rem; color: #666;">忠実性</div>
-                                <div style="height: 8px; background: #FF6B6B; border-radius: 4px; width: 70%; margin: 5px auto;"></div>
-                                <div style="font-size: 0.8rem; color: #333; font-weight: bold;">70%</div>
-                            </div>
-                            <div style="text-align: center; flex: 1;">
-                                <div style="font-size: 0.9rem; color: #666;">可愛さ</div>
-                                <div style="height: 8px; background: #FFD93D; border-radius: 4px; width: 80%; margin: 5px auto;"></div>
-                                <div style="font-size: 0.8rem; color: #333; font-weight: bold;">80%</div>
-                            </div>
-                            <div style="text-align: center; flex: 1;">
-                                <div style="font-size: 0.9rem; color: #666;">簡素さ</div>
-                                <div style="height: 8px; background: #6BCF7F; border-radius: 4px; width: 80%; margin: 5px auto;"></div>
-                                <div style="font-size: 0.8rem; color: #333; font-weight: bold;">80%</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <img src="${imageUrl}" alt="生成されたぬりえ" style="max-width: 100%; max-height: 500px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 3px solid #FFB6C1;">
+                <p style="color: #8B4513; font-size: 1rem; margin-top: 10px;">
+                    可愛いぬりえができました！ 🌈
+                </p>
             `;
-            
             resultContainer.style.display = 'block';
             resultContainer.scrollIntoView({ behavior: 'smooth' });
         }
 
         function printColoring() {
-            if (!generatedImageUrl) {
-                showError('プリントする画像がありません');
-                return;
-            }
-
+            if (!generatedImageUrl) return;
+            
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
                 <html>
-                    <head>
-                        <title>せかいぬりえ - バランス版プリント</title>
-                        <style>
-                            body { 
-                                margin: 0; 
-                                padding: 20px; 
-                                text-align: center; 
-                                font-family: 'Comic Sans MS', Arial, sans-serif;
-                            }
-                            img {
-                                max-height: 90vh;
-                                border: 2px solid #000;
-                            }
-                            h1 {
-                                color: #FF69B4;
-                                font-size: 2rem;
-                                margin-bottom: 20px;
-                            }
-                            @media print {
-                                body { margin: 10px; }
-                                h1 { font-size: 1.5rem; }
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>🌈 せかいぬりえ（バランス版） 🎨</h1>
-                        <img src="${generatedImageUrl}" alt="ぬりえ">
-                        <p style="margin-top: 20px; color: #8B4513;">忠実で可愛くて塗りやすいぬりえだよ！</p>
+                    <head><title>せかいぬりえ</title></head>
+                    <body style="margin: 0; padding: 20px; text-align: center;">
+                        <h1 style="color: #FF69B4;">🌈 せかいぬりえ 🎨</h1>
+                        <img src="${generatedImageUrl}" style="max-height: 90vh; border: 2px solid #000;">
                     </body>
                 </html>
             `);
             printWindow.document.close();
             
-            // 画像読み込み完了後にプリント
             const img = printWindow.document.querySelector('img');
-            img.onload = () => {
-                setTimeout(() => printWindow.print(), 500);
-            };
+            img.onload = () => setTimeout(() => printWindow.print(), 500);
         }
 
         function downloadColoring() {
-            if (!generatedImageUrl) {
-                showError('ダウンロードする画像がありません');
-                return;
-            }
-
-            // 画像をダウンロード
+            if (!generatedImageUrl) return;
+            
             const link = document.createElement('a');
             link.href = generatedImageUrl;
-            link.download = `せかいぬりえ_バランス版_${new Date().getTime()}.png`;
+            link.download = `せかいぬりえ_${new Date().getTime()}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            showSuccess('バランス版ぬりえをダウンロードしました！ 📥');
+            showSuccess('ぬりえをダウンロードしました！ 📥');
         }
 
         function resetApp() {
@@ -1050,13 +461,8 @@ ${designPlan}
             loadingContainer.style.display = 'none';
             generateButton.disabled = true;
             hideError();
-            
-            // トップにスクロール
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
-        // 初期化
-        console.log('バランス調整版（忠実70% + 可愛80% + 簡素80%）初期化完了');
     </script>
 </body>
 </html>
